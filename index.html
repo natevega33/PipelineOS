@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>PipelineOS — Nathan Vega</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080810;color:#e2e2f0;font-family:'DM Sans',sans-serif;height:100vh;overflow:hidden}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:#0a0a14}
+  ::-webkit-scrollbar-thumb{background:#1e1e3a;border-radius:3px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hov-row:hover{background:#0e0e1e!important;cursor:pointer}
+  .hov-card:hover{border-color:#2a2a4a!important;transform:translateY(-2px);box-shadow:0 8px 24px #00000040}
+  .hov-btn:hover{opacity:.75}
+  .hov-nav:hover{background:#0e0e1e!important}
+  .hov-action:hover{background:#1a1a2e!important}
+  textarea:focus,input:focus,select:focus{border-color:#7c6af7!important;outline:none}
+  input[type="date"]{color-scheme:dark;cursor:pointer;min-height:38px}
+  input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);cursor:pointer;padding:4px;border-radius:4px}
+  input[type="date"]::-webkit-calendar-picker-indicator:hover{background:#2a2a4a}
+  ::placeholder{color:#3a3a5a}
+  /* Mobile styles */
+  @media(max-width:768px){
+    body{overflow:auto}
+    #mobile-view{display:block!important}
+    #desktop-view{display:none!important}
+  }
+  @media(min-width:769px){
+    #mobile-view{display:none!important}
+    #desktop-view{display:flex!important}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ─── CONFIG — Fill these in after setting up Supabase ───────────────────────
+const SUPABASE_URL = "https://wyeifrvhubffdljkqcad.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZWlmcnZodWJmZmRsamtxY2FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Njk0ODMsImV4cCI6MjA4NzQ0NTQ4M30.APTz3xwVsW1WhIUQq-EY-EbaLDmYsSU8DZ2-lm1Oovo";
+// ─────────────────────────────────────────────────────────────────────────────
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const STAGES = ["Negotiation","Closed Won","Closed Lost"];
+const STAGE_COLOR = {
+  Lead:"#60a5fa",Qualified:"#a78bfa",Proposal:"#fbbf24",
+  Negotiation:"#f97316","Closed Won":"#34d399","Closed Lost":"#6b7280"
+};
+const PRIORITY_COLOR = {Low:"#6b7280",Medium:"#fbbf24",High:"#f87171"};
+function uid(){return Math.random().toString(36).slice(2,10);}
+function fmtDate(d){return d?new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"—";}
+function fmtMoney(v){return "$"+Number(v||0).toLocaleString();}
+function initials(name=""){return name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();}
+
+// ─── DATA LAYER ──────────────────────────────────────────────────────────────
+async function loadData(){
+  try{
+    const {data,error}=await supabase.from("crm_data").select("data").eq("user_key","nathan_vega").single();
+    if(error||!data) return {contacts:[],notes:[],tasks:[],events:[]};
+    return data.data||{contacts:[],notes:[],tasks:[],events:[]};
+  }catch{return {contacts:[],notes:[],tasks:[],events:[]};}
+}
+async function saveData(state){
+  try{
+    await supabase.from("crm_data").upsert({user_key:"nathan_vega",data:state,updated_at:new Date().toISOString()});
+  }catch(e){console.warn("Save failed",e);}
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+function App(){
+  const isMobile=window.innerWidth<=768;
+  const [contacts,setContacts]=useState([]);
+  const [notes,setNotes]=useState([]);
+  const [tasks,setTasks]=useState([]);
+  const [events,setEvents]=useState([]);
+  const [ready,setReady]=useState(false);
+  const [tab,setTab]=useState("dashboard");
+  const [modal,setModal]=useState(null);
+  const [detail,setDetail]=useState(null);
+  const [dragId,setDragId]=useState(null);
+  const [dragOver,setDragOver]=useState(null);
+  const [saveStatus,setSaveStatus]=useState(null);
+  const saveTimer=useRef(null);
+
+  useEffect(()=>{
+    loadData().then(d=>{
+      setContacts(d.contacts||[]);
+      setNotes(d.notes||[]);
+      setTasks(d.tasks||[]);
+      setEvents(d.events||[]);
+      setReady(true);
+    });
+  },[]);
+
+  useEffect(()=>{
+    if(!ready) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current=setTimeout(async()=>{
+      setSaveStatus("saving");
+      await saveData({contacts,notes,tasks,events});
+      setSaveStatus("saved");
+      setTimeout(()=>setSaveStatus(null),2000);
+    },800);
+  },[contacts,notes,tasks,events,ready]);
+
+  const overdueTasks=tasks.filter(t=>!t.done&&t.dueDate&&new Date(t.dueDate)<new Date()).length;
+  const pipelineValue=contacts.filter(c=>!["Closed Won","Closed Lost"].includes(c.stage)).reduce((s,c)=>s+Number(c.value||0),0);
+  const wonValue=contacts.filter(c=>c.stage==="Closed Won").reduce((s,c)=>s+Number(c.value||0),0);
+
+  function upsertContact(c){
+    if(c.id) setContacts(cs=>cs.map(x=>x.id===c.id?c:x));
+    else setContacts(cs=>[...cs,{...c,id:uid(),createdAt:Date.now()}]);
+    setModal(null);
+  }
+  function deleteContact(id){
+    setContacts(cs=>cs.filter(c=>c.id!==id));
+    setNotes(ns=>ns.filter(n=>n.contactId!==id));
+    setTasks(ts=>ts.filter(t=>t.contactId!==id));
+    if(detail?.id===id) setDetail(null);
+  }
+  function addNote(contactId,text){if(text.trim()) setNotes(ns=>[...ns,{id:uid(),contactId,text,createdAt:Date.now()}]);}
+  function deleteNote(id){setNotes(ns=>ns.filter(n=>n.id!==id));}
+  function upsertTask(t){
+    if(t.id) setTasks(ts=>ts.map(x=>x.id===t.id?t:x));
+    else setTasks(ts=>[...ts,{...t,id:uid()}]);
+    setModal(null);
+  }
+  function toggleTask(id){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!t.done}:t));}
+  function deleteTask(id){setTasks(ts=>ts.filter(t=>t.id!==id));}
+  function importContacts(newContacts){
+    const withIds=newContacts.map(c=>({...c,id:uid(),createdAt:Date.now(),stage:c.stage||"Lead",value:Number(c.value)||0}));
+    setContacts(cs=>[...cs,...withIds]);
+    setModal(null);
+    setTab("contacts");
+  }
+  function upsertEvent(e){
+    if(e.id) setEvents(es=>es.map(x=>x.id===e.id?e:x));
+    else setEvents(es=>[...es,{...e,id:uid()}]);
+    setModal(null);
+  }
+  function deleteEvent(id){setEvents(es=>es.filter(e=>e.id!==id));}
+
+  function dropOnStage(stage){
+    if(dragId) setContacts(cs=>cs.map(c=>c.id===dragId?{...c,stage}:c));
+    setDragId(null);setDragOver(null);
+  }
+
+  if(!ready) return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",flexDirection:"column",gap:16}}>
+      <div style={{width:32,height:32,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+      <div style={{fontSize:13,color:"#5a5a7a"}}>Loading your CRM…</div>
+    </div>
+  );
+
+  // ── MOBILE VIEW ─────────────────────────────────────────────────────────────
+  if(isMobile){
+    const mobileNav=[
+      {id:"dashboard",icon:"▦",label:"Home"},
+      {id:"contacts",icon:"◎",label:"Contacts"},
+      {id:"tasks",icon:"▣",label:"Tasks"},
+      {id:"calendar",icon:"◫",label:"Calendar"},
+      {id:"pipeline",icon:"⬣",label:"Pipeline"},
+    ];
+    return(
+      <div style={{height:"100vh",background:"#080810",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* Compact header */}
+        <div style={{padding:"12px 16px",borderBottom:"1px solid #14142a",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0"}}>Pipeline<span style={{color:"#7c6af7"}}>OS</span></div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {saveStatus&&<span style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"saving…":"✓ saved"}</span>}
+            {tab==="contacts"&&<button onClick={()=>setModal({type:"contact",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Contact</button>}
+            {tab==="tasks"&&<button onClick={()=>setModal({type:"task",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Task</button>}
+            {tab==="calendar"&&<button onClick={()=>setModal({type:"event",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Appt</button>}
+            {tab==="pipeline"&&<button onClick={()=>setModal({type:"contact",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Contact</button>}
+            {tab==="dashboard"&&<button onClick={()=>setModal({type:"import"})} style={{...S.primaryBtn,background:"transparent",border:"1px dashed #2a2a4a",color:"#7c6af7",padding:"7px 10px",fontSize:11}}>✦ Import</button>}
+          </div>
+        </div>
+        {/* Content */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px",paddingBottom:4}}>
+          {tab==="dashboard"&&<Dashboard contacts={contacts} tasks={tasks} notes={notes} pipelineValue={pipelineValue} wonValue={wonValue} overdueTasks={overdueTasks} onToggleTask={toggleTask} onContactClick={c=>{setDetail(c);setTab("contacts");}} onDraftFollowUp={(c,t)=>setModal({type:"followup",contact:c,msgType:t})}/>}
+          {tab==="pipeline"&&<Pipeline contacts={contacts} dragId={dragId} dragOver={dragOver} setDragId={setDragId} setDragOver={setDragOver} onDrop={dropOnStage} onCardClick={c=>{setDetail(c);setTab("contacts");}} onEdit={c=>setModal({type:"contact",data:c})}/>}
+          {tab==="contacts"&&<Contacts contacts={contacts} detail={detail} setDetail={setDetail} notes={notes} tasks={tasks} onEdit={c=>setModal({type:"contact",data:c})} onDelete={deleteContact} onAddNote={addNote} onDeleteNote={deleteNote} onToggleTask={toggleTask} onAddTask={contactId=>setModal({type:"task",data:{contactId}})} onDraftFollowUp={(c,t)=>setModal({type:"followup",contact:c,msgType:t})} isMobile={true}/>}
+          {tab==="tasks"&&<Tasks tasks={tasks} contacts={contacts} onToggle={toggleTask} onDelete={deleteTask} onEdit={t=>setModal({type:"task",data:t})}/>}
+          {tab==="calendar"&&<Calendar events={events} tasks={tasks} contacts={contacts} onAddEvent={date=>setModal({type:"event",data:{date}})} onEditEvent={e=>setModal({type:"event",data:e})} onDeleteEvent={deleteEvent}/>}
+        </div>
+        {/* Bottom nav */}
+        <div style={{display:"flex",borderTop:"1px solid #14142a",background:"#0a0a14",flexShrink:0}}>
+          {mobileNav.map(n=>(
+            <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,padding:"10px 2px 8px",border:"none",background:"transparent",color:tab===n.id?"#a89af7":"#4a4a6a",display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
+              <span style={{fontSize:15}}>{n.icon}</span>
+              <span style={{fontSize:9,fontWeight:tab===n.id?600:400}}>{n.label}</span>
+              {n.id==="tasks"&&overdueTasks>0&&<span style={{position:"absolute",top:6,right:"calc(50% - 12px)",background:"#ef4444",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 4px",borderRadius:8}}>{overdueTasks}</span>}
+            </button>
+          ))}
+        </div>
+        {/* Modals */}
+        {modal?.type==="contact"&&<ContactModal data={modal.data} onSave={upsertContact} onClose={()=>setModal(null)}/>}
+        {modal?.type==="task"&&<TaskModal data={modal.data} contacts={contacts} onSave={upsertTask} onClose={()=>setModal(null)}/>}
+        {modal?.type==="event"&&<EventModal data={modal.data} contacts={contacts} onSave={upsertEvent} onClose={()=>setModal(null)}/>}
+        {modal?.type==="followup"&&<FollowUpModal contact={modal.contact} msgType={modal.msgType} notes={notes.filter(n=>n.contactId===modal.contact?.id)} onClose={()=>setModal(null)}/>}
+        {modal?.type==="import"&&<ImportModal onImport={importContacts} onClose={()=>setModal(null)}/>}
+      </div>
+    );
+  }
+
+  // ── DESKTOP VIEW ────────────────────────────────────────────────────────────
+  const NAV=[
+    {id:"dashboard",icon:"▦",label:"Dashboard"},
+    {id:"pipeline",icon:"⬣",label:"Pipeline"},
+    {id:"contacts",icon:"◎",label:"Contacts"},
+    {id:"tasks",icon:"▣",label:"Tasks"},
+    {id:"calendar",icon:"◫",label:"Calendar"},
+  ];
+
+  return(
+    <div id="desktop-view" style={{display:"flex",height:"100vh",overflow:"hidden"}}>
+      {/* SIDEBAR */}
+      <aside style={{width:220,background:"#0a0a14",borderRight:"1px solid #14142a",display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{padding:"24px 20px 16px",borderBottom:"1px solid #14142a"}}>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#e2e2f0"}}>Pipeline<span style={{color:"#7c6af7"}}>OS</span></div>
+          <div style={{fontSize:11,color:"#3a3a5a",marginTop:2,fontFamily:"'DM Mono',monospace"}}>Nathan Vega</div>
+        </div>
+        <nav style={{flex:1,padding:"12px 10px",display:"flex",flexDirection:"column",gap:2}}>
+          {NAV.map(n=>(
+            <button key={n.id} className="hov-nav" onClick={()=>setTab(n.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,background:tab===n.id?"#13132a":"transparent",border:"none",color:tab===n.id?"#a89af7":"#6b6b8a",fontSize:13,fontWeight:tab===n.id?500:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+              <span style={{fontSize:14,opacity:.8}}>{n.icon}</span>
+              {n.label}
+              {n.id==="tasks"&&overdueTasks>0&&<span style={{marginLeft:"auto",background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10}}>{overdueTasks}</span>}
+            </button>
+          ))}
+        </nav>
+        <div style={{padding:"12px 10px",borderTop:"1px solid #14142a",display:"flex",flexDirection:"column",gap:6}}>
+          {saveStatus&&<div style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",textAlign:"center",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"saving…":"✓ saved"}</div>}
+          <button onClick={()=>setModal({type:"import"})} className="hov-btn" style={{padding:"9px 12px",borderRadius:8,border:"1px dashed #2a2a4a",background:"transparent",color:"#7c6af7",fontSize:12,fontWeight:500,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",textAlign:"left"}}>✦ AI Import Contacts</button>
+          <button onClick={()=>setModal({type:"contact",data:{}})} className="hov-btn" style={{padding:"9px 12px",borderRadius:8,border:"none",background:"#7c6af7",color:"#fff",fontSize:12,fontWeight:600,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>+ New Contact</button>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <header style={{padding:"20px 28px",borderBottom:"1px solid #14142a",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div>
+            <h1 style={{fontFamily:"'Instrument Serif',serif",fontSize:24,color:"#e2e2f0",fontWeight:400}}>
+              {{dashboard:"Overview",pipeline:"Sales Pipeline",contacts:"Contacts",tasks:"Tasks",calendar:"Calendar"}[tab]}
+            </h1>
+            <p style={{fontSize:12,color:"#3a3a5a",marginTop:2}}>
+              {{dashboard:"Your sales at a glance",pipeline:"Drag cards between stages",contacts:"Manage leads & clients",tasks:"Follow-ups and reminders",calendar:"Schedule appointments & track tasks"}[tab]}
+            </p>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {tab==="contacts"&&<button onClick={()=>setModal({type:"contact",data:{}})} style={S.primaryBtn}>+ Contact</button>}
+            {tab==="tasks"&&<button onClick={()=>setModal({type:"task",data:{}})} style={S.primaryBtn}>+ Task</button>}
+            {tab==="calendar"&&<button onClick={()=>setModal({type:"event",data:{}})} style={S.primaryBtn}>+ Appointment</button>}
+          </div>
+        </header>
+        <div style={{flex:1,overflowY:"auto",padding:"24px 28px"}}>
+          {tab==="dashboard"&&<Dashboard contacts={contacts} tasks={tasks} notes={notes} pipelineValue={pipelineValue} wonValue={wonValue} overdueTasks={overdueTasks} onToggleTask={toggleTask} onContactClick={c=>{setDetail(c);setTab("contacts");}} onDraftFollowUp={(c,t)=>setModal({type:"followup",contact:c,msgType:t})} />}
+          {tab==="pipeline"&&<Pipeline contacts={contacts} dragId={dragId} dragOver={dragOver} setDragId={setDragId} setDragOver={setDragOver} onDrop={dropOnStage} onCardClick={c=>{setDetail(c);setTab("contacts");}} onEdit={c=>setModal({type:"contact",data:c})} />}
+          {tab==="contacts"&&<Contacts contacts={contacts} detail={detail} setDetail={setDetail} notes={notes} tasks={tasks} onEdit={c=>setModal({type:"contact",data:c})} onDelete={deleteContact} onAddNote={addNote} onDeleteNote={deleteNote} onToggleTask={toggleTask} onAddTask={contactId=>setModal({type:"task",data:{contactId}})} onDraftFollowUp={(c,t)=>setModal({type:"followup",contact:c,msgType:t})} />}
+          {tab==="tasks"&&<Tasks tasks={tasks} contacts={contacts} onToggle={toggleTask} onDelete={deleteTask} onEdit={t=>setModal({type:"task",data:t})} />}
+          {tab==="calendar"&&<Calendar events={events} tasks={tasks} contacts={contacts} onAddEvent={date=>setModal({type:"event",data:{date}})} onEditEvent={e=>setModal({type:"event",data:e})} onDeleteEvent={deleteEvent} />}
+        </div>
+      </div>
+
+      {modal?.type==="contact"&&<ContactModal data={modal.data} onSave={upsertContact} onClose={()=>setModal(null)} />}
+      {modal?.type==="task"&&<TaskModal data={modal.data} contacts={contacts} onSave={upsertTask} onClose={()=>setModal(null)} />}
+      {modal?.type==="import"&&<ImportModal onImport={importContacts} onClose={()=>setModal(null)} />}
+      {modal?.type==="followup"&&<FollowUpModal contact={modal.contact} msgType={modal.msgType} notes={notes.filter(n=>n.contactId===modal.contact.id)} onClose={()=>setModal(null)} />}
+      {modal?.type==="event"&&<EventModal data={modal.data} contacts={contacts} onSave={upsertEvent} onClose={()=>setModal(null)} />}
+    </div>
+  );
+}
+
+// ─── MOBILE QUICK-ADD ─────────────────────────────────────────────────────────
+const WORK_AREAS=["Attic","Crawlspace","Kneewall","Basement","Walls","Air Sealing","HVAC","Other"];
+const OBJECTIONS=["Price / Financing","Waiting on Spouse / Partner","Getting Other Quotes","Timing / Too Busy","No objection"];
+function fmtAreas(areas){
+  if(!areas||areas.length===0) return "your project";
+  if(areas.length===1) return areas[0];
+  return areas.slice(0,-1).join(", ")+" and "+areas[areas.length-1];
+}
+
+const BARRIERS=["Knob and Tube","Vermiculite","Failed Combustion Safety Test","Structural","Mold","Other"];
+
+function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
+  const [mobileTab,setMobileTab]=useState("add");
+  const [addMode,setAddMode]=useState("form"); // "form" | "paste"
+  const empty={name:"",phone:"",address:"",email:"",appointmentDate:"",workAreas:[]};
+  const [f,setF]=useState(empty);
+  const [raw,setRaw]=useState("");
+  const [pasteStep,setPasteStep]=useState("paste"); // "paste" | "review"
+  const [saved,setSaved]=useState(false);
+  const [savedName,setSavedName]=useState("");
+  const [search,setSearch]=useState("");
+  // detail/edit state for Search tab
+  const [detailContact,setDetailContact]=useState(null);
+  const [detailF,setDetailF]=useState(null);
+  const [detailSaved,setDetailSaved]=useState(false);
+  const [detailNoteText,setDetailNoteText]=useState("");
+  const [detailNoteSaved,setDetailNoteSaved]=useState(false);
+  // notes tab state
+  const [selectedContact,setSelectedContact]=useState(null);
+  const [noteText,setNoteText]=useState("");
+  const [noteSaved,setNoteSaved]=useState(false);
+  const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+  const setD=k=>e=>setDetailF(p=>({...p,[k]:e.target.value}));
+
+  function openDetail(c){
+    setDetailContact(c);
+    setDetailF({...c,workAreas:c.workAreas||[]});
+    setDetailNoteText("");
+    setDetailSaved(false);
+  }
+  function closeDetail(){setDetailContact(null);setDetailF(null);}
+  function saveDetail(){
+    if(!detailF||!detailF.name.trim()) return;
+    onUpdate(detailF);
+    setDetailSaved(true);
+    setTimeout(()=>setDetailSaved(false),2000);
+  }
+  function toggleDetailArea(a){setDetailF(p=>({...p,workAreas:(p.workAreas||[]).includes(a)?(p.workAreas||[]).filter(x=>x!==a):[...(p.workAreas||[]),a]}));}
+  function addDetailNote(){
+    if(!detailNoteText.trim()||!detailContact) return;
+    onAddNote(detailContact.id,detailNoteText);
+    setDetailNoteText("");
+    setDetailNoteSaved(true);
+    setTimeout(()=>setDetailNoteSaved(false),2000);
+  }
+  function logTouch(icon,label){
+    onAddNote(detailContact.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`);
+    setDetailNoteSaved(true);
+    setTimeout(()=>setDetailNoteSaved(false),2000);
+  }
+
+  const inp={width:"100%",padding:"16px 14px",background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:12,color:"#e2e2f0",fontSize:16,fontFamily:"'DM Sans',sans-serif",WebkitAppearance:"none",outline:"none"};
+  const inpActive=(val)=>({...inp,border:`1px solid ${val?"#7c6af7":"#1e1e2e"}`});
+  const lbl={display:"block",fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:7};
+  const bigBtn=(on)=>({width:"100%",padding:"19px",borderRadius:14,border:"none",background:on?"#7c6af7":"#1a1a2a",color:on?"#fff":"#3a3a5a",fontSize:17,fontWeight:600,fontFamily:"'DM Sans',sans-serif",cursor:on?"pointer":"default",transition:"background 0.15s"});
+
+  function extract(){
+    if(!raw.trim()) return;
+    let name="",phone="",address="",email="";
+    const locationMatch=raw.match(/location[:\s]+([^\n]+)/i);
+    if(locationMatch) address=locationMatch[1].trim();
+    const emailMatch=raw.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    if(emailMatch) email=emailMatch[1].trim();
+    const lines=raw.split(/[\n,]+/).map(l=>l.trim()).filter(Boolean);
+    lines.forEach(line=>{
+      const l=line.toLowerCase();
+      if(l.startsWith("location")) return;
+      if(!phone&&line.replace(/\D/g,"").length>=7&&line.replace(/\D/g,"").length<=11&&/^[\d\s\-\(\)\+\.]+$/.test(line)){ phone=line.replace(/\D/g,""); return; }
+      if(!name&&!/^[\d\s\-\(\)\+\.]+$/.test(line)&&line.length>1&&line.length<60&&!/\d{3,}/.test(line)){ name=line.trim(); return; }
+    });
+    if(name.toLowerCase().includes("nathan vega")) name="";
+    setF(p=>({...p,name,phone,address:address||p.address,email}));
+    setPasteStep("review");
+  }
+
+  function handleSave(){
+    if(!f.name.trim()) return;
+    setSavedName(f.name);
+    onSave({name:f.name,phone:f.phone,address:f.address,company:"",stage:"Negotiation",value:0,workAreas:f.workAreas},f.appointmentDate,f.workAreas);
+    setSaved(true);
+    setTimeout(()=>{setSaved(false);setF(empty);setRaw("");setPasteStep("paste");},2200);
+  }
+
+  function handleAddNote(){
+    if(!noteText.trim()||!selectedContact) return;
+    onAddNote(selectedContact.id,noteText);
+    setNoteText("");setNoteSaved(true);
+    setTimeout(()=>setNoteSaved(false),2000);
+  }
+
+  const filteredContacts=contacts.filter(c=>
+    c.name.toLowerCase().includes(search.toLowerCase())||
+    (c.phone||"").includes(search)||
+    (c.address||"").toLowerCase().includes(search.toLowerCase())
+  ).slice(0,20);
+
+  return(
+    <div style={{height:"100vh",background:"#080810",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+      {/* Header */}
+      <div style={{padding:"20px 20px 0",flexShrink:0}}>
+        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:24,color:"#e2e2f0"}}>Pipeline<span style={{color:"#7c6af7"}}>OS</span></div>
+        <div style={{fontSize:12,color:"#5a5a7a",marginTop:2}}>{contacts.length} contact{contacts.length!==1?"s":""} in CRM</div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",margin:"16px 20px 0",background:"#0e0e1e",borderRadius:12,padding:4,flexShrink:0}}>
+        {[["add","➕ Add"],["search","🔍 Search"],["notes","📝 Notes"]].map(([id,label])=>(
+          <button key={id} onClick={()=>{setMobileTab(id);setSearch("");}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:mobileTab===id?"#7c6af7":"transparent",color:mobileTab===id?"#fff":"#5a5a7a",fontSize:13,fontWeight:mobileTab===id?600:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s"}}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── ADD TAB ── */}
+      {mobileTab==="add"&&(
+        <div style={{flex:1,overflowY:"auto",padding:"20px 20px 24px",display:"flex",flexDirection:"column",gap:14}}>
+          {saved?(
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+              <div style={{fontSize:60}}>✓</div>
+              <div style={{fontFamily:"'Instrument Serif',serif",fontSize:26,color:"#34d399"}}>Saved!</div>
+              <div style={{fontSize:13,color:"#5a5a7a",textAlign:"center"}}>{savedName||"Client"} added to your CRM{f.appointmentDate?" with appointment":""}</div>
+            </div>
+          ):(
+            <>
+              {/* Mode toggle */}
+              <div style={{display:"flex",background:"#0e0e1e",borderRadius:10,padding:3,flexShrink:0}}>
+                {[["form","✏️ Form"],["paste","📋 Paste"]].map(([m,label])=>(
+                  <button key={m} onClick={()=>{setAddMode(m);setF(empty);setRaw("");setPasteStep("paste");}}
+                    style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:addMode===m?"#7c6af7":"transparent",color:addMode===m?"#fff":"#5a5a7a",fontSize:14,fontWeight:addMode===m?600:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s"}}>{label}</button>
+                ))}
+              </div>
+
+              {/* ── FORM MODE ── */}
+              {addMode==="form"&&(
+                <>
+                  <div>
+                    <label style={lbl}>Name *</label>
+                    <input value={f.name} onChange={set("name")} inputMode="text" autoCapitalize="words" autoCorrect="off" placeholder="Full name" style={inpActive(f.name)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Phone Number</label>
+                    <input value={f.phone} onChange={set("phone")} inputMode="tel" autoCapitalize="none" autoCorrect="off" type="tel" placeholder="(555) 555-5555" style={inpActive(f.phone)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Address</label>
+                    <input value={f.address} onChange={set("address")} inputMode="text" autoCapitalize="words" autoCorrect="off" placeholder="123 Main St, City" style={inpActive(f.address)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Appointment Date</label>
+                    <input type="date" value={f.appointmentDate} onChange={set("appointmentDate")} style={{...inpActive(f.appointmentDate),colorScheme:"dark"}}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Work Areas</label>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:2}}>
+                      {WORK_AREAS.map(a=>{const on=f.workAreas.includes(a);return(
+                        <button key={a} type="button" onClick={()=>setF(p=>({...p,workAreas:on?p.workAreas.filter(x=>x!==a):[...p.workAreas,a]}))}
+                          style={{padding:"9px 14px",borderRadius:20,border:`1px solid ${on?"#7c6af7":"#1e1e2e"}`,background:on?"#1e1e3a":"transparent",color:on?"#a89af7":"#5a5a7a",fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                          {a}
+                        </button>
+                      );})}
+                    </div>
+                  </div>
+                  <button onClick={handleSave} disabled={!f.name.trim()} style={{...bigBtn(f.name.trim()),marginTop:4}}>Save Client</button>
+                </>
+              )}
+
+              {/* ── PASTE MODE ── */}
+              {addMode==="paste"&&pasteStep==="paste"&&(
+                <>
+                  <div style={{fontSize:14,color:"#a2a2c2",lineHeight:1.6}}>Paste client info — name, phone, address in any order.</div>
+                  <textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="Paste client info here…" autoCorrect="off" autoCapitalize="none"
+                    style={{...inp,minHeight:200,resize:"none",lineHeight:1.6,fontSize:15,padding:"16px 14px"}}/>
+                  <button onClick={extract} disabled={!raw.trim()} style={bigBtn(raw.trim())}>Fill In Fields →</button>
+                </>
+              )}
+              {addMode==="paste"&&pasteStep==="review"&&(
+                <>
+                  <div style={{fontSize:13,color:"#7c6af7"}}>✦ Review and edit, then add date &amp; work areas</div>
+                  <div>
+                    <label style={lbl}>Name *</label>
+                    <input value={f.name} onChange={set("name")} inputMode="text" autoCapitalize="words" autoCorrect="off" style={inpActive(f.name)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Phone Number</label>
+                    <input value={f.phone} onChange={set("phone")} inputMode="tel" autoCapitalize="none" autoCorrect="off" type="tel" style={inpActive(f.phone)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Address</label>
+                    <input value={f.address} onChange={set("address")} inputMode="text" autoCapitalize="words" autoCorrect="off" style={inpActive(f.address)}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Appointment Date</label>
+                    <input type="date" value={f.appointmentDate} onChange={set("appointmentDate")} style={{...inpActive(f.appointmentDate),colorScheme:"dark"}}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Work Areas</label>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:2}}>
+                      {WORK_AREAS.map(a=>{const on=f.workAreas.includes(a);return(
+                        <button key={a} type="button" onClick={()=>setF(p=>({...p,workAreas:on?p.workAreas.filter(x=>x!==a):[...p.workAreas,a]}))}
+                          style={{padding:"9px 14px",borderRadius:20,border:`1px solid ${on?"#7c6af7":"#1e1e2e"}`,background:on?"#1e1e3a":"transparent",color:on?"#a89af7":"#5a5a7a",fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                          {a}
+                        </button>
+                      );})}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:10}}>
+                    <button onClick={()=>setPasteStep("paste")} style={{flex:1,padding:"16px",borderRadius:14,border:"1px solid #1e1e2e",background:"transparent",color:"#8a8aa8",fontSize:15,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>← Back</button>
+                    <button onClick={handleSave} disabled={!f.name.trim()} style={{...bigBtn(f.name.trim()),flex:2,padding:"16px",fontSize:16}}>Save Client</button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── SEARCH TAB ── */}
+      {mobileTab==="search"&&!detailContact&&(
+        <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:12}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, phone, or address…"
+            autoCorrect="off" autoCapitalize="none" style={{...inp,fontSize:16}}/>
+          {search.trim()&&filteredContacts.length===0&&<div style={{fontSize:13,color:"#3a3a5a"}}>No contacts found.</div>}
+          {filteredContacts.map(c=>(
+            <button key={c.id} onClick={()=>openDetail(c)} style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:12,padding:"14px 16px",textAlign:"left",width:"100%",cursor:"pointer"}}>
+              <div style={{fontSize:16,color:"#e2e2f0",fontWeight:500}}>{c.name}</div>
+              {c.phone&&<div style={{fontSize:14,color:"#7c6af7",marginTop:6}}>📞 {c.phone}</div>}
+              {c.address&&<div style={{fontSize:13,color:"#6b6b8a",marginTop:4}}>📍 {c.address}</div>}
+              <div style={{fontSize:11,color:STAGE_COLOR[c.stage],marginTop:8,background:`${STAGE_COLOR[c.stage]}15`,display:"inline-block",padding:"2px 8px",borderRadius:20}}>{c.stage}</div>
+            </button>
+          ))}
+          {!search.trim()&&<div style={{fontSize:13,color:"#3a3a5a",textAlign:"center",marginTop:20}}>Type a name or number to search.</div>}
+        </div>
+      )}
+
+      {/* ── CONTACT DETAIL / EDIT ── */}
+      {mobileTab==="search"&&detailContact&&detailF&&(
+        <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:14}}>
+          {/* Header */}
+          <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+            <button onClick={closeDetail} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0,flexShrink:0}}>← Back</button>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",flex:1}}>{detailContact.name}</div>
+            {detailContact.phone&&<a href={`tel:${detailContact.phone}`} style={{color:"#7c6af7",fontSize:22,textDecoration:"none",flexShrink:0}}>📞</a>}
+          </div>
+
+          {/* Quick touch log */}
+          <div style={{display:"flex",gap:6}}>
+            {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
+              <button key={label} onClick={()=>logTouch(icon,label)}
+                style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+          {detailNoteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Logged!</div>}
+
+          {/* Edit fields */}
+          <div style={{borderTop:"1px solid #1e1e2e",paddingTop:14,display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.08em"}}>Edit Contact</div>
+            {[["name","Name","text","words"],["phone","Phone","tel","none"],["address","Address","text","words"]].map(([k,l,mode,cap])=>(
+              <div key={k}>
+                <label style={lbl}>{l}</label>
+                <input value={detailF[k]||""} onChange={setD(k)} inputMode={mode} autoCapitalize={cap} autoCorrect="off" style={inpActive(detailF[k])}/>
+              </div>
+            ))}
+            <div>
+              <label style={lbl}>Stage</label>
+              <select value={detailF.stage||"Negotiation"} onChange={setD("stage")} style={{...inpActive(true),cursor:"pointer"}}>
+                {STAGES.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Work Areas</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}}>
+                {WORK_AREAS.map(a=>{const on=(detailF.workAreas||[]).includes(a);return(
+                  <button key={a} type="button" onClick={()=>toggleDetailArea(a)}
+                    style={{padding:"8px 14px",borderRadius:20,border:`1px solid ${on?"#7c6af7":"#1e1e2e"}`,background:on?"#1e1e3a":"transparent",color:on?"#a89af7":"#5a5a7a",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                    {a}
+                  </button>
+                );})}
+              </div>
+            </div>
+            <div>
+              <label style={{...lbl,color:"#a78bfa"}}>🧠 Objection</label>
+              <select value={detailF.objection||""} onChange={setD("objection")} style={{...inpActive(detailF.objection),cursor:"pointer"}}>
+                <option value="">— None —</option>
+                {OBJECTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{...lbl,color:"#f97316"}}>⚠ Barriers</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+                {BARRIERS.map(b=>{const on=(detailF.barriers||[]).includes(b);return(
+                  <button key={b} type="button" onClick={()=>setDetailF(p=>({...p,barriers:on?p.barriers.filter(x=>x!==b):[...p.barriers,b]}))}
+                    style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${on?"#f97316":"#2a2a4a"}`,background:on?"#2a1800":"transparent",color:on?"#fb923c":"#6b6b8a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                    {b}
+                  </button>
+                );})}
+              </div>
+            </div>
+            {detailSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Changes saved!</div>}
+            <button onClick={saveDetail} disabled={!detailF.name.trim()} style={{...bigBtn(detailF.name.trim()),marginTop:2}}>Save Changes</button>
+          </div>
+
+          {/* Notes */}
+          <div style={{borderTop:"1px solid #1e1e2e",paddingTop:14,display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.08em"}}>Notes</div>
+            <textarea value={detailNoteText} onChange={e=>setDetailNoteText(e.target.value)} placeholder="Add a note…"
+              style={{...inp,minHeight:90,resize:"none",lineHeight:1.6,fontSize:14,padding:"14px"}}/>
+            <button onClick={addDetailNote} disabled={!detailNoteText.trim()} style={bigBtn(detailNoteText.trim())}>Save Note</button>
+            {notes.filter(n=>n.contactId===detailContact.id).sort((a,b)=>b.createdAt-a.createdAt).slice(0,8).map(n=>(
+              <div key={n.id} style={{background:"#0e0e1e",borderRadius:10,padding:"12px 14px"}}>
+                <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
+                <div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── NOTES TAB ── */}
+      {mobileTab==="notes"&&(
+        <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:14}}>
+          {!selectedContact?(
+            <>
+              <div style={{fontSize:14,color:"#a2a2c2"}}>Pick a client to add a note:</div>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search client…"
+                autoCorrect="off" autoCapitalize="none" style={{...inp,fontSize:16}}/>
+              {contacts.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())).slice(0,15).map(c=>(
+                <button key={c.id} onClick={()=>{setSelectedContact(c);setSearch("");}}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:12,cursor:"pointer",textAlign:"left",width:"100%"}}>
+                  <div style={{width:36,height:36,borderRadius:"50%",background:`${STAGE_COLOR[c.stage]}18`,color:STAGE_COLOR[c.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
+                  <div>
+                    <div style={{fontSize:15,color:"#e2e2f0",fontWeight:500}}>{c.name}</div>
+                    <div style={{fontSize:12,color:"#5a5a7a"}}>{c.address||""}</div>
+                  </div>
+                </button>
+              ))}
+            </>
+          ):(
+            <>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <button onClick={()=>{setSelectedContact(null);setNoteText("");}} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0}}>← Back</button>
+                <div style={{fontSize:15,color:"#e2e2f0",fontWeight:500}}>{selectedContact.name}</div>
+              </div>
+              {noteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"12px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Note saved!</div>}
+              <div>
+                <label style={{...lbl,marginBottom:8}}>Add Note</label>
+                <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="What happened with this client?"
+                  style={{...inp,minHeight:140,resize:"none",lineHeight:1.6,fontSize:15,padding:"16px 14px"}}/>
+              </div>
+              <button onClick={handleAddNote} disabled={!noteText.trim()} style={bigBtn(noteText.trim())}>Save Note</button>
+              {notes.filter(n=>n.contactId===selectedContact.id).sort((a,b)=>b.createdAt-a.createdAt).slice(0,5).map(n=>(
+                <div key={n.id} style={{background:"#0e0e1e",borderRadius:10,padding:"12px 14px"}}>
+                  <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
+                  <div style={{fontSize:11,color:"#4a4a6a",marginTop:4}}>{fmtDate(n.createdAt)}</div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onToggleTask,onContactClick,onDraftFollowUp}){
+  const cMap=Object.fromEntries(contacts.map(c=>[c.id,c]));
+  const upcoming=tasks.filter(t=>!t.done).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,5);
+  const recentNotes=[...notes].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5);
+  const now=Date.now();
+  const lastAct={};
+  notes.forEach(n=>{if(!lastAct[n.contactId]||n.createdAt>lastAct[n.contactId]) lastAct[n.contactId]=n.createdAt;});
+  const digestContacts=contacts.filter(c=>!["Closed Won","Closed Lost"].includes(c.stage)).map(c=>{
+    const last=lastAct[c.id]||c.createdAt;
+    const days=Math.floor((now-last)/8.64e7);
+    const overdueTask=tasks.find(t=>!t.done&&t.contactId===c.id&&t.dueDate&&new Date(t.dueDate)<new Date());
+    let reason=null,urgency=0;
+    if(overdueTask){reason=`Overdue: "${overdueTask.title}"`;urgency=3;}
+    else if(days>=7){reason=`No activity for ${days} days`;urgency=days>=14?2:1;}
+    return {...c,reason,urgency};
+  }).filter(c=>c.reason).sort((a,b)=>b.urgency-a.urgency).slice(0,6);
+
+  return(
+    <div style={{animation:"fadeUp 0.3s ease"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>
+        {[
+          {label:"Pipeline Value",value:fmtMoney(pipelineValue),accent:"#7c6af7"},
+          {label:"Revenue Won",value:fmtMoney(wonValue),accent:"#34d399"},
+          {label:"Total Contacts",value:contacts.length,accent:"#60a5fa"},
+          {label:"Overdue Tasks",value:overdueTasks,accent:overdueTasks>0?"#f87171":"#6b7280"},
+        ].map(s=>(
+          <div key={s.label} className="hov-card" style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:"18px 20px",transition:"all 0.2s",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,left:0,width:3,height:"100%",background:s.accent}}/>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:28,color:"#e2e2f0",marginBottom:4}}>{s.value}</div>
+            <div style={{fontSize:12,color:"#6b6b8a"}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Barrier Watch */}
+      {contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).length>0&&(
+        <div style={{background:"#120900",border:"1px solid #f9731630",borderRadius:12,padding:20,marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+            <div style={{...S.cardTitle,color:"#f97316"}}>⚠ Barrier Watch</div>
+            <span style={{fontSize:11,background:"#3a1a00",color:"#f97316",padding:"2px 8px",borderRadius:10}}>{contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).length} blocked</span>
+          </div>
+          {contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).map(c=>(
+            <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#1a0e00",borderRadius:8,marginBottom:6,cursor:"pointer"}} onClick={()=>onContactClick(c)}>
+              <div style={{width:34,height:34,borderRadius:"50%",background:"#f9731618",color:"#f97316",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>· {c.company||c.address}</span></div>
+                <div style={{fontSize:11,color:"#f97316",marginTop:1}}>🚧 {(c.barriers||[]).join(", ")}{c.barrierNote&&` — ${c.barrierNote}`}</div>
+              </div>
+              <span style={{fontSize:11,color:STAGE_COLOR[c.stage],background:`${STAGE_COLOR[c.stage]}15`,padding:"2px 7px",borderRadius:20,flexShrink:0}}>{c.stage}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Daily Digest */}
+      <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20,marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+          <div style={S.cardTitle}>Today's Follow-Up Digest</div>
+          {digestContacts.length>0&&<span style={{fontSize:11,background:"#3a1a4a",color:"#c87af7",padding:"2px 8px",borderRadius:10}}>{digestContacts.length} need attention</span>}
+        </div>
+        {digestContacts.length===0&&<div style={{fontSize:13,color:"#3a3a5a"}}>🎉 All caught up — no follow-ups needed today.</div>}
+        {digestContacts.map(c=>(
+          <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6}}>
+            <div style={{width:34,height:34,borderRadius:"50%",background:`${STAGE_COLOR[c.stage]}18`,color:STAGE_COLOR[c.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
+            <div style={{flex:1,cursor:"pointer"}} onClick={()=>onContactClick(c)}>
+              <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>· {c.company}</span></div>
+              <div style={{fontSize:11,color:c.urgency===3?"#f87171":c.urgency===2?"#fbbf24":"#6b7280",marginTop:1}}>{c.reason}</div>
+            </div>
+            <span style={{fontSize:11,color:STAGE_COLOR[c.stage],background:`${STAGE_COLOR[c.stage]}15`,padding:"2px 7px",borderRadius:20,flexShrink:0}}>{c.stage}</span>
+            <div style={{display:"flex",gap:5,flexShrink:0}}>
+              <button onClick={()=>onDraftFollowUp(c,"email")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>✉ Email</button>
+              <button onClick={()=>onDraftFollowUp(c,"text")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>💬 Text</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20}}>
+          <div style={S.cardTitle}>Pipeline by Stage</div>
+          {STAGES.map(stage=>{
+            const cs=contacts.filter(c=>c.stage===stage);
+            const val=cs.reduce((s,c)=>s+Number(c.value||0),0);
+            return(
+              <div key={stage} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:STAGE_COLOR[stage],flexShrink:0}}/>
+                <div style={{flex:1,fontSize:13,color:"#8a8aa8"}}>{stage}</div>
+                <div style={{fontSize:12,color:"#4a4a6a",width:20,textAlign:"center"}}>{cs.length}</div>
+                <div style={{fontSize:13,color:"#c2c2da",fontFamily:"'DM Mono',monospace"}}>{fmtMoney(val)}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20}}>
+          <div style={S.cardTitle}>Upcoming Tasks</div>
+          {upcoming.length===0&&<div style={{fontSize:13,color:"#3a3a5a",marginTop:8}}>No pending tasks 🎉</div>}
+          {upcoming.map(t=>{
+            const overdue=t.dueDate&&new Date(t.dueDate)<new Date();
+            return(
+              <div key={t.id} className="hov-row" style={{display:"flex",alignItems:"center",gap:10,padding:"7px 6px",borderRadius:6,marginBottom:2}}>
+                <button onClick={()=>onToggleTask(t.id)} style={{width:15,height:15,border:`1.5px solid ${overdue?"#f87171":"#2a2a4a"}`,borderRadius:3,background:"transparent",flexShrink:0,cursor:"pointer"}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:"#d2d2ea"}}>{t.title}</div>
+                  <div style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" · Overdue":""}</div>
+                </div>
+                <span style={{fontSize:11,color:PRIORITY_COLOR[t.priority],background:"#0e0e1e",padding:"2px 7px",borderRadius:20}}>{t.priority}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20,marginTop:16}}>
+        <div style={S.cardTitle}>Recent Activity</div>
+        {recentNotes.length===0&&<div style={{fontSize:13,color:"#3a3a5a",marginTop:8}}>No activity yet.</div>}
+        {recentNotes.map(n=>{
+          const c=cMap[n.contactId];
+          return(
+            <div key={n.id} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #0e0e1e"}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:"#13132a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#7c6af7",fontWeight:700,flexShrink:0}}>{initials(c?.name||"?")}</div>
+              <div>
+                <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
+                <div style={{fontSize:11,color:"#4a4a6a",marginTop:2}}>
+                  {c&&<span style={{color:"#7c6af7",cursor:"pointer"}} onClick={()=>onContactClick(c)}>{c.name} · {c.company} · </span>}
+                  {fmtDate(n.createdAt)}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── PIPELINE ─────────────────────────────────────────────────────────────────
+function Pipeline({contacts,dragId,dragOver,setDragId,setDragOver,onDrop,onCardClick,onEdit}){
+  return(
+    <div style={{overflowX:"auto",animation:"fadeUp 0.3s ease"}}>
+      <div style={{display:"flex",gap:12,minWidth:"max-content",paddingBottom:16}}>
+        {STAGES.map(stage=>{
+          const cards=contacts.filter(c=>c.stage===stage);
+          const total=cards.reduce((s,c)=>s+Number(c.value||0),0);
+          const isOver=dragOver===stage;
+          return(
+            <div key={stage} onDragOver={e=>{e.preventDefault();setDragOver(stage);}} onDrop={()=>onDrop(stage)} onDragLeave={()=>setDragOver(null)}
+              style={{width:220,background:isOver?"#0e0e1e":"#0a0a14",border:`1px solid ${isOver?STAGE_COLOR[stage]:"#14142a"}`,borderRadius:12,padding:14,transition:"all 0.15s",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{width:7,height:7,borderRadius:"50%",background:STAGE_COLOR[stage]}}/>
+                  <span style={{fontSize:12,color:"#a2a2ba",fontWeight:500}}>{stage}</span>
+                  <span style={{fontSize:11,color:"#3a3a5a",background:"#0e0e1e",padding:"1px 6px",borderRadius:10}}>{cards.length}</span>
+                </div>
+                <span style={{fontSize:11,color:"#5a5a7a",fontFamily:"'DM Mono',monospace"}}>{fmtMoney(total)}</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {cards.map(c=>(
+                  <div key={c.id} draggable onDragStart={()=>setDragId(c.id)} onDragEnd={()=>{setDragId(null);setDragOver(null);}}
+                    className="hov-card" style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:8,padding:12,opacity:dragId===c.id?0.3:1,transition:"all 0.2s",cursor:"grab"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500,cursor:"pointer"}} onClick={()=>onCardClick(c)}>{c.name}</div>
+                      <button onClick={()=>onEdit(c)} className="hov-action" style={{fontSize:11,color:"#5a5a7a",padding:"2px 5px",borderRadius:4,background:"transparent",cursor:"pointer"}}>✎</button>
+                    </div>
+                    <div style={{fontSize:11,color:"#4a4a6a",marginTop:2}}>{c.company}</div>
+                    <div style={{fontSize:12,color:STAGE_COLOR[stage],fontFamily:"'DM Mono',monospace",marginTop:6}}>{fmtMoney(c.value)}</div>
+                  </div>
+                ))}
+                {cards.length===0&&<div style={{textAlign:"center",color:"#2a2a3a",fontSize:12,padding:"16px 0",border:"1px dashed #1a1a2a",borderRadius:8}}>drop here</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── CONTACTS ─────────────────────────────────────────────────────────────────
+function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNote,onDeleteNote,onToggleTask,onAddTask,onDraftFollowUp,isMobile}){
+  const [search,setSearch]=useState("");
+  const [noteText,setNoteText]=useState("");
+  const filtered=contacts.filter(c=>
+    c.name.toLowerCase().includes(search.toLowerCase())||
+    (c.company||"").toLowerCase().includes(search.toLowerCase())||
+    (c.email||"").toLowerCase().includes(search.toLowerCase())
+  );
+  const cNotes=notes.filter(n=>n.contactId===detail?.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const cTasks=tasks.filter(t=>t.contactId===detail?.id);
+  // Mobile: show only list OR only detail, not both
+  if(isMobile&&detail) return(
+    <div style={{animation:"fadeUp 0.2s ease",paddingBottom:20}}>
+      <button onClick={()=>setDetail(null)} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:"0 0 14px 0",display:"block"}}>← All Contacts</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+        <div style={{display:"flex",gap:12,alignItems:"center"}}>
+          <div style={{width:44,height:44,borderRadius:"50%",background:`${STAGE_COLOR[detail.stage]}18`,color:STAGE_COLOR[detail.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,flexShrink:0}}>{initials(detail.name)}</div>
+          <div><div style={{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#e2e2f0"}}>{detail.name}</div><div style={{fontSize:12,color:"#6b6b8a"}}>{detail.company}</div></div>
+        </div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
+          <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>✉ Draft</button>
+          <button onClick={()=>onEdit(detail)} style={S.outlineBtn}>Edit</button>
+          <button onClick={()=>onDelete(detail.id)} style={{...S.outlineBtn,color:"#f87171",borderColor:"#3a1a1a"}}>Delete</button>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,padding:14,background:"#0e0e1e",borderRadius:10}}>
+        {[{label:"Email",value:detail.email},{label:"Phone",value:detail.phone},{label:"Address",value:detail.address},{label:"Stage",value:detail.stage,color:STAGE_COLOR[detail.stage]},{label:"Deal Value",value:fmtMoney(detail.value)}].filter(f=>f.value).map(f=>(
+          <div key={f.label} style={f.label==="Address"?{gridColumn:"1/-1"}:{}}>
+            <div style={{fontSize:10,color:"#4a4a6a",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{f.label}</div>
+            <div style={{fontSize:13,color:f.color||"#c2c2da"}}>{f.value}</div>
+          </div>
+        ))}
+      </div>
+      {detail.workAreas&&detail.workAreas.length>0&&<div style={{marginBottom:12,display:"flex",flexWrap:"wrap",gap:6}}>{detail.workAreas.map(a=><span key={a} style={{padding:"4px 10px",borderRadius:20,border:"1px solid #7c6af740",background:"#1e1e3a",color:"#a89af7",fontSize:12}}>{a}</span>)}</div>}
+      {(detail.barriers||[]).length>0&&<div style={{background:"#1a0e00",border:"1px solid #f9731640",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:10,alignItems:"flex-start"}}><span>⚠</span><div><div style={{fontSize:12,color:"#f97316",fontWeight:600}}>{(detail.barriers||[]).join(", ")}</div>{detail.barrierNote&&<div style={{fontSize:12,color:"#c2a080",marginTop:2}}>{detail.barrierNote}</div>}</div></div>}
+      {detail.objection&&detail.objection!=="No objection"&&<div style={{background:"#12102a",border:"1px solid #a78bfa40",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}><span>🧠</span><div><div style={{fontSize:11,color:"#a78bfa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.07em"}}>Objection</div><div style={{fontSize:13,color:"#c2b8f0"}}>{detail.objection}</div></div></div>}
+      <div style={{display:"flex",gap:6,marginBottom:16}}>
+        {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
+          <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)} style={{flex:1,padding:"9px 4px",borderRadius:8,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}} className="hov-action">{icon} {label}</button>
+        ))}
+      </div>
+      <div style={{marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={S.cardTitle}>Tasks</div><button onClick={()=>onAddTask(detail.id)} style={{fontSize:11,color:"#7c6af7",background:"transparent",border:"none",cursor:"pointer"}}>+ Add</button></div>
+        {cTasks.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No tasks yet.</div>}
+        {cTasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #0e0e1e"}}><button onClick={()=>onToggleTask(t.id)} style={{width:14,height:14,border:`1.5px solid ${t.done?"#7c6af7":"#2a2a4a"}`,borderRadius:3,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:"#fff",fontSize:9}}>✓</span>}</button><span style={{fontSize:12,color:t.done?"#4a4a6a":"#c2c2da",flex:1,textDecoration:t.done?"line-through":"none"}}>{t.title}</span><span style={{fontSize:11,color:"#4a4a6a"}}>{t.dueDate?fmtDate(t.dueDate):""}</span></div>))}
+      </div>
+      <div>
+        <div style={{...S.cardTitle,marginBottom:10}}>Notes</div>
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note…" onKeyDown={e=>{if(e.key==="Enter"){onAddNote(detail.id,noteText);setNoteText("");}}} style={{...S.input,flex:1,fontSize:13}}/>
+          <button onClick={()=>{onAddNote(detail.id,noteText);setNoteText("");}} style={S.primaryBtn}>Save</button>
+        </div>
+        {cNotes.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No notes yet.</div>}
+        {cNotes.map(n=>(<div key={n.id} style={{padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6,display:"flex",gap:10}}><div style={{flex:1}}><div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div><div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div></div><button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">✕</button></div>))}
+      </div>
+    </div>
+  );
+  return(
+    <div style={{display:"flex",gap:16,animation:"fadeUp 0.3s ease",height:isMobile?undefined:"calc(100vh - 130px)"}}>
+      <div style={{width:detail?340:undefined,flex:detail?undefined:1,display:"flex",flexDirection:"column",minWidth:0}}>
+        <input placeholder="Search by name, company, or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:10,fontSize:13}}/>
+        <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:1}}>
+          {filtered.map(c=>(
+            <div key={c.id} className="hov-row" onClick={()=>setDetail(c)}
+              style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:8,background:detail?.id===c.id?"#0e0e1e":"transparent",borderLeft:`3px solid ${detail?.id===c.id?STAGE_COLOR[c.stage]:"transparent"}`,transition:"all 0.15s"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:`${STAGE_COLOR[c.stage]}18`,color:STAGE_COLOR[c.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.name}{(c.barriers||[]).length>0&&<span style={{color:"#f97316",marginLeft:6,fontSize:11}}>⚠</span>}</div>
+                <div style={{fontSize:11,color:"#5a5a7a",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.workAreas&&c.workAreas.length?c.workAreas.join(", "):c.company||""}</div>
+              </div>
+              <div style={{flexShrink:0,textAlign:"right"}}>
+                <div style={{fontSize:11,color:"#8a8aa8",fontFamily:"'DM Mono',monospace"}}>{fmtMoney(c.value)}</div>
+                <div style={{fontSize:10,color:STAGE_COLOR[c.stage],marginTop:2}}>{c.stage}</div>
+              </div>
+            </div>
+          ))}
+          {filtered.length===0&&<div style={{fontSize:13,color:"#3a3a5a",padding:16}}>No contacts found.</div>}
+        </div>
+      </div>
+
+      {detail&&(
+        <div style={{flex:1,background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:24,overflowY:"auto",animation:"slideIn 0.2s ease"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+            <div style={{display:"flex",gap:14,alignItems:"center"}}>
+              <div style={{width:48,height:48,borderRadius:"50%",background:`${STAGE_COLOR[detail.stage]}18`,color:STAGE_COLOR[detail.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700}}>{initials(detail.name)}</div>
+              <div>
+                <div style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0"}}>{detail.name}</div>
+                <div style={{fontSize:13,color:"#6b6b8a"}}>{detail.company}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
+              <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>✉ Draft Email</button>
+              <button onClick={()=>onDraftFollowUp(detail,"text")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>💬 Draft Text</button>
+              <button onClick={()=>onEdit(detail)} style={S.outlineBtn}>Edit</button>
+              <button onClick={()=>onDelete(detail.id)} style={{...S.outlineBtn,color:"#f87171",borderColor:"#3a1a1a"}}>Delete</button>
+              <button onClick={()=>setDetail(null)} style={S.outlineBtn}>✕</button>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20,padding:16,background:"#0e0e1e",borderRadius:10}}>
+            {[{label:"Email",value:detail.email},{label:"Phone",value:detail.phone},{label:"Address",value:detail.address},{label:"Stage",value:detail.stage,color:STAGE_COLOR[detail.stage]},{label:"Deal Value",value:fmtMoney(detail.value)},{label:"Added",value:fmtDate(detail.createdAt)}].filter(f=>f.value).map(f=>(
+              <div key={f.label} style={f.label==="Address"?{gridColumn:"1/-1"}:{}}>
+                <div style={{fontSize:10,color:"#4a4a6a",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>{f.label}</div>
+                <div style={{fontSize:13,color:f.color||"#c2c2da"}}>{f.value}</div>
+              </div>
+            ))}
+          </div>
+          {detail.workAreas&&detail.workAreas.length>0&&(
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,color:"#4a4a6a",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Work Areas</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {detail.workAreas.map(a=>(
+                  <span key={a} style={{padding:"4px 12px",borderRadius:20,border:"1px solid #7c6af740",background:"#1e1e3a",color:"#a89af7",fontSize:12}}>{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(detail.barriers||[]).length>0&&(
+            <div style={{background:"#1a0e00",border:"1px solid #f9731640",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:12,alignItems:"flex-start"}}>
+              <span style={{fontSize:18,flexShrink:0}}>⚠</span>
+              <div>
+                <div style={{fontSize:12,color:"#f97316",fontWeight:600,marginBottom:3}}>{(detail.barriers||[]).join(", ")}</div>
+                {detail.barrierNote&&<div style={{fontSize:13,color:"#c2a080"}}>{detail.barrierNote}</div>}
+              </div>
+              <button onClick={()=>onEdit({...detail,barriers:[],barrierNote:""})} style={{marginLeft:"auto",fontSize:11,color:"#5a5a7a",background:"transparent",border:"1px solid #3a2a1a",borderRadius:6,padding:"3px 8px",cursor:"pointer",flexShrink:0}}>Clear</button>
+            </div>
+          )}
+          {detail.objection&&detail.objection!=="No objection"&&(
+            <div style={{background:"#12102a",border:"1px solid #a78bfa40",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",gap:10,alignItems:"center"}}>
+              <span style={{fontSize:16,flexShrink:0}}>🧠</span>
+              <div>
+                <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>Objection</div>
+                <div style={{fontSize:13,color:"#c2b8f0"}}>{detail.objection}</div>
+              </div>
+              <button onClick={()=>onEdit({...detail,objection:""})} style={{marginLeft:"auto",fontSize:11,color:"#5a5a7a",background:"transparent",border:"1px solid #2a2a4a",borderRadius:6,padding:"3px 8px",cursor:"pointer",flexShrink:0}}>Clear</button>
+            </div>
+          )}
+          {/* Quick-touch logging */}
+          <div style={{display:"flex",gap:6,marginBottom:20}}>
+            {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
+              <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)
+              } style={{flex:1,padding:"9px 6px",borderRadius:8,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"background 0.1s"}} className="hov-action">{icon} {label}</button>
+            ))}
+          </div>
+          <div style={{marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={S.cardTitle}>Tasks</div>
+              <button onClick={()=>onAddTask(detail.id)} style={{fontSize:11,color:"#7c6af7",background:"transparent",border:"none",cursor:"pointer"}}>+ Add task</button>
+            </div>
+            {cTasks.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No tasks yet.</div>}
+            {cTasks.map(t=>(
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #0e0e1e"}}>
+                <button onClick={()=>onToggleTask(t.id)} style={{width:14,height:14,border:`1.5px solid ${t.done?"#7c6af7":"#2a2a4a"}`,borderRadius:3,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {t.done&&<span style={{color:"#fff",fontSize:9,lineHeight:1}}>✓</span>}
+                </button>
+                <span style={{fontSize:12,color:t.done?"#4a4a6a":"#c2c2da",flex:1,textDecoration:t.done?"line-through":"none"}}>{t.title}</span>
+                <span style={{fontSize:11,color:"#4a4a6a"}}>{t.dueDate?fmtDate(t.dueDate):""}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={S.cardTitle}>Notes</div>
+            <div style={{display:"flex",gap:8,margin:"10px 0"}}>
+              <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note… (Enter to save)"
+                onKeyDown={e=>{if(e.key==="Enter"){onAddNote(detail.id,noteText);setNoteText("");}}}
+                style={{...S.input,flex:1,fontSize:12}}/>
+              <button onClick={()=>{onAddNote(detail.id,noteText);setNoteText("");}} style={S.primaryBtn}>Save</button>
+            </div>
+            {cNotes.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No notes yet.</div>}
+            {cNotes.map(n=>(
+              <div key={n.id} style={{padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6,display:"flex",gap:10}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
+                  <div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div>
+                </div>
+                <button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TASKS ────────────────────────────────────────────────────────────────────
+function Tasks({tasks,contacts,onToggle,onDelete,onEdit}){
+  const [filter,setFilter]=useState("pending");
+  const cMap=Object.fromEntries(contacts.map(c=>[c.id,c]));
+  const sorted=[...tasks].sort((a,b)=>{if(a.done!==b.done) return a.done?1:-1; return new Date(a.dueDate)-new Date(b.dueDate);});
+  const filtered=filter==="all"?sorted:filter==="done"?sorted.filter(t=>t.done):sorted.filter(t=>!t.done);
+  return(
+    <div style={{animation:"fadeUp 0.3s ease"}}>
+      <div style={{display:"flex",gap:6,marginBottom:16}}>
+        {["pending","all","done"].map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:20,border:"1px solid",borderColor:filter===f?"#7c6af7":"#1e1e2e",background:filter===f?"#7c6af7":"transparent",color:filter===f?"#fff":"#6b6b8a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",textTransform:"capitalize"}}>{f}</button>
+        ))}
+      </div>
+      <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,overflow:"hidden"}}>
+        {filtered.length===0&&<div style={{fontSize:13,color:"#3a3a5a",padding:20}}>No tasks here.</div>}
+        {filtered.map((t,i)=>{
+          const overdue=!t.done&&t.dueDate&&new Date(t.dueDate)<new Date();
+          const c=cMap[t.contactId];
+          return(
+            <div key={t.id} className="hov-row" style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<filtered.length-1?"1px solid #0e0e1e":"none"}}>
+              <button onClick={()=>onToggle(t.id)} style={{width:17,height:17,border:`2px solid ${t.done?"#7c6af7":overdue?"#f87171":"#2a2a4a"}`,borderRadius:4,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {t.done&&<span style={{color:"#fff",fontSize:10}}>✓</span>}
+              </button>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,color:t.done?"#4a4a6a":"#d2d2ea",textDecoration:t.done?"line-through":"none"}}>{t.title}</div>
+                {c&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>{c.name} · {c.company}</div>}
+              </div>
+              <span style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" · Overdue":""}</span>
+              <span style={{fontSize:11,color:PRIORITY_COLOR[t.priority],background:"#0e0e1e",padding:"2px 8px",borderRadius:20,minWidth:52,textAlign:"center"}}>{t.priority}</span>
+              <div style={{display:"flex",gap:4}}>
+                <button onClick={()=>onEdit(t)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>✎</button>
+                <button onClick={()=>onDelete(t.id)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>✕</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── FOLLOW-UP MODAL ──────────────────────────────────────────────────────────
+const MSG_TEMPLATES={
+  text:[
+    {id:"quote-fu", label:"Quote Follow-Up",
+     body:c=>`Hi ${c.name}, wanted to follow up on the quote we sent over. Any questions or ready to move forward? – Nathan, HomeWorks Energy`},
+    {id:"referral", label:"Job Complete / Referral",
+     body:c=>`Hi ${c.name}, hope you're loving the results from your recent ${fmtAreas(c.workAreas)}! If you know anyone who could benefit from our services, we'd really appreciate the referral. – Nathan, HomeWorks Energy`},
+    {id:"voicemail", label:"Left Voicemail",
+     body:c=>`Hi ${c.name}, I just tried giving you a call and left a voicemail. Feel free to call back or reply here. – Nathan, HomeWorks Energy`},
+  ],
+  email:[
+    {id:"quote-fu", label:"Quote Follow-Up",
+     subject:"Following up on your quote",
+     body:c=>`Hi ${c.name},\n\nI wanted to check in on the quote I sent for ${fmtAreas(c.workAreas)}. Happy to answer any questions or walk you through the details. Let me know what works best for you.\n\n– Nathan, HomeWorks Energy`},
+  ],
+};
+
+function FollowUpModal({contact,msgType,notes,onClose}){
+  const [type,setType]=useState(msgType||"email");
+  const [aiStatus,setAiStatus]=useState("idle"); // idle | loading | done
+  const [draft,setDraft]=useState("");
+  const [subject,setSubject]=useState("");
+  const [copied,setCopied]=useState(false);
+
+  function applyTemplate(tpl){
+    setDraft(tpl.body(contact));
+    if(tpl.subject) setSubject(tpl.subject);
+    setAiStatus("done");
+  }
+
+  async function generate(){
+    setAiStatus("loading");
+    const notesText=notes.length>0?notes.map(n=>n.text).join("; "):"No notes yet.";
+    const objectionText=contact.objection&&contact.objection!=="No objection"?`Their main objection is: ${contact.objection}.`:"";
+    const isEmail=type==="email";
+    const prompt=isEmail
+      ?`Write a short warm professional follow-up email from Nathan at HomeWorks Energy to ${contact.name}. Deal stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Return JSON with "subject" and "body" only. No markdown, no explanation.`
+      :`Write a short casual friendly follow-up text from Nathan at HomeWorks Energy to ${contact.name}. Stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Under 3 sentences, conversational not salesy. Return JSON with "body" only. No markdown.`;
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:prompt}]})});
+      const data=await res.json();
+      const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
+      const parsed=JSON.parse(raw);
+      setDraft(parsed.body||"");
+      if(isEmail) setSubject(parsed.subject||"");
+      setAiStatus("done");
+    }catch{setDraft("Couldn't generate. Try again.");setAiStatus("done");}
+  }
+
+  function send(){
+    if(type==="text"&&contact.phone){
+      window.open(`sms:${contact.phone}?body=${encodeURIComponent(draft)}`);
+    } else if(type==="email"&&contact.email){
+      window.open(`mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}`);
+    } else {
+      navigator.clipboard.writeText(type==="email"&&subject?`Subject: ${subject}\n\n${draft}`:draft)
+        .then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+    }
+  }
+
+  function copyToClipboard(){
+    const text=type==="email"&&subject?`Subject: ${subject}\n\n${draft}`:draft;
+    navigator.clipboard.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+  }
+
+  const templates=MSG_TEMPLATES[type]||[];
+
+  return(
+    <div style={S.overlay}>
+      <div style={{...S.modal,width:540,maxHeight:"88vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+          <div>
+            <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>Message {contact.name}</h2>
+            <p style={{fontSize:12,color:"#5a5a7a",marginTop:3}}>{contact.phone&&type==="text"?`📞 ${contact.phone}`:contact.email&&type==="email"?`✉ ${contact.email}`:contact.name}</p>
+          </div>
+          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+        </div>
+
+        {/* Email / Text toggle */}
+        <div style={{display:"flex",gap:4,marginBottom:16,background:"#0e0e1e",borderRadius:8,padding:4}}>
+          {[["email","✉ Email"],["text","💬 Text"]].map(([m,label])=>(
+            <button key={m} onClick={()=>{setType(m);setDraft("");setSubject("");setAiStatus("idle");}} style={{flex:1,padding:"7px 0",borderRadius:6,border:"none",background:type===m?"#1e1e36":"transparent",color:type===m?"#a89af7":"#5a5a7a",fontSize:12,fontWeight:type===m?500:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{label}</button>
+          ))}
+        </div>
+
+        {/* Templates */}
+        {templates.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Templates</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {templates.map(tpl=>(
+                <button key={tpl.id} onClick={()=>applyTemplate(tpl)}
+                  style={{padding:"7px 12px",borderRadius:8,border:"1px solid #2a2a4a",background:draft===tpl.body(contact)?"#1e1e3a":"transparent",color:draft===tpl.body(contact)?"#a89af7":"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                  {tpl.label}
+                </button>
+              ))}
+              <button onClick={generate} style={{padding:"7px 12px",borderRadius:8,border:"1px solid #2a2a4a",background:"transparent",color:"#5a5a7a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                {aiStatus==="loading"?"…":"✦ AI Draft"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading */}
+        {aiStatus==="loading"&&(
+          <div style={{textAlign:"center",padding:"30px 0"}}>
+            <div style={{width:24,height:24,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 10px"}}/>
+            <div style={{fontSize:13,color:"#6b6b8a"}}>Drafting…</div>
+          </div>
+        )}
+
+        {/* Draft editor */}
+        {(aiStatus==="done"||draft)&&aiStatus!=="loading"&&(
+          <>
+            {type==="email"&&(<div style={{marginBottom:10}}><label style={S.label}>Subject</label><input value={subject} onChange={e=>setSubject(e.target.value)} style={S.input}/></div>)}
+            <div><label style={S.label}>Message</label>
+              <textarea value={draft} onChange={e=>setDraft(e.target.value)} style={{...S.input,height:type==="email"?200:120,resize:"vertical",lineHeight:1.7,fontSize:13}}/>
+            </div>
+            <div style={{fontSize:11,color:"#4a4a6a",marginTop:8,marginBottom:16}}>
+              ✦ Edit freely before sending.
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={copyToClipboard} style={S.outlineBtn}>{copied?"✓ Copied":"Copy"}</button>
+              <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
+              <button onClick={send} style={S.primaryBtn}>
+                {type==="text"&&contact.phone?"Open in Messages":type==="email"&&contact.email?"Open in Mail":"Copy to Clipboard"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Empty state */}
+        {aiStatus==="idle"&&!draft&&(
+          <div style={{textAlign:"center",padding:"30px 0",color:"#3a3a5a",fontSize:13}}>Pick a template above or use ✦ AI Draft</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── IMPORT MODAL ─────────────────────────────────────────────────────────────
+function ImportModal({onImport,onClose}){
+  const [mode,setMode]=useState("image");
+  const [text,setText]=useState("");
+  const [imgData,setImgData]=useState(null);
+  const [status,setStatus]=useState("idle");
+  const [parsed,setParsed]=useState([]);
+  const [errorMsg,setErrorMsg]=useState("");
+  const fileRef=useRef();
+
+  function handleFile(file){
+    if(!file) return;
+    const isHeic=file.type==="image/heic"||file.type==="image/heif"||file.name?.toLowerCase().endsWith(".heic");
+    if(isHeic){setErrorMsg("iPhone HEIC format isn't supported.\n\nFix: iPhone Settings → Camera → Formats → Most Compatible\n\nThen screenshot again.");setStatus("error");return;}
+    if(!file.type.startsWith("image/")){setErrorMsg("Please upload an image file.");setStatus("error");return;}
+    const reader=new FileReader();
+    reader.onload=e=>{const d=e.target.result;setImgData({base64:d.split(",")[1],mediaType:file.type,preview:d});setStatus("idle");};
+    reader.readAsDataURL(file);
+  }
+
+  async function runImport(){
+    const hasInput=mode==="image"?imgData:text.trim();
+    if(!hasInput) return;
+    setStatus("loading");
+    try{
+      const prompt="Extract all contacts. Return ONLY a JSON array. Each object: name (required), company, email, phone, address. Omit null fields. Do NOT include Nathan Vega. Return [] if none found.";
+      const content=mode==="image"
+        ?[{type:"image",source:{type:"base64",media_type:imgData.mediaType,data:imgData.base64}},{type:"text",text:prompt}]
+        :[{type:"text",text:prompt+"\n\nText:\n"+text}];
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content}]})});
+      const data=await res.json();
+      const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
+      const contacts=JSON.parse(raw);
+      if(!Array.isArray(contacts)) throw new Error();
+      const valid=contacts.filter(c=>c.name&&c.name.trim()&&!c.name.toLowerCase().includes("nathan vega"));
+      if(valid.length===0){setErrorMsg("No contacts found. Try a clearer screenshot.");setStatus("error");return;}
+      setParsed(valid);setStatus("preview");
+    }catch{setErrorMsg("Something went wrong. Try again.");setStatus("error");}
+  }
+
+  return(
+    <div style={S.overlay}>
+      <div style={{...S.modal,width:580,maxHeight:"88vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+          <div>
+            <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#e2e2f0",fontWeight:400}}>AI Contact Import</h2>
+            <p style={{fontSize:12,color:"#5a5a7a",marginTop:4}}>Screenshot or paste — Claude extracts everything automatically</p>
+          </div>
+          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+        </div>
+        {status==="idle"&&(
+          <>
+            <div style={{display:"flex",gap:4,marginBottom:16,background:"#0e0e1e",borderRadius:8,padding:4}}>
+              {[["image","📷 Screenshot"],["text","📋 Paste Text"]].map(([m,label])=>(
+                <button key={m} onClick={()=>{setMode(m);setImgData(null);setText("");}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:mode===m?"#1e1e36":"transparent",color:mode===m?"#a89af7":"#5a5a7a",fontSize:12,fontWeight:mode===m?500:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{label}</button>
+              ))}
+            </div>
+            {mode==="image"&&(
+              <>
+                <div onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}} onClick={()=>fileRef.current.click()}
+                  style={{border:`2px dashed ${imgData?"#7c6af7":"#1e1e2e"}`,borderRadius:10,padding:"28px 20px",textAlign:"center",cursor:"pointer",marginBottom:14,background:imgData?"#0e0e1e":"transparent"}}>
+                  {imgData?(<div><img src={imgData.preview} style={{maxWidth:"100%",maxHeight:180,borderRadius:6,marginBottom:10}}/><div style={{fontSize:12,color:"#7c6af7"}}>✓ Loaded — click to change</div></div>)
+                  :(<div><div style={{fontSize:28,marginBottom:8}}>🖼</div><div style={{fontSize:13,color:"#8a8aa8",marginBottom:4}}>Drop screenshot or click to browse</div><div style={{fontSize:11,color:"#4a4a6a"}}>Screenshot your client screen and upload it here</div></div>)}
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+              </>
+            )}
+            {mode==="text"&&<textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Paste client data here — any format works…" style={{...S.input,width:"100%",height:160,resize:"vertical",fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.7,marginBottom:14}}/>}
+            <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
+              <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
+              <button onClick={runImport} disabled={!(mode==="image"?imgData:text.trim())} style={{...S.primaryBtn,opacity:(mode==="image"?imgData:text.trim())?1:0.4}}>✦ Extract Contacts</button>
+            </div>
+          </>
+        )}
+        {status==="loading"&&<div style={{textAlign:"center",padding:"48px 0"}}><div style={{width:32,height:32,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 14px"}}/><div style={{fontSize:14,color:"#6b6b8a"}}>Extracting contacts…</div></div>}
+        {status==="error"&&<div style={{textAlign:"center",padding:"36px 0"}}><div style={{fontSize:32,marginBottom:10}}>⚠</div><div style={{fontSize:13,color:"#f87171",marginBottom:16,lineHeight:1.8,whiteSpace:"pre-line"}}>{errorMsg}</div><button onClick={()=>setStatus("idle")} style={S.primaryBtn}>Try Again</button></div>}
+        {status==="preview"&&(
+          <>
+            <div style={{fontSize:13,color:"#34d399",marginBottom:12,fontWeight:500}}>✓ Found {parsed.length} contact{parsed.length!==1?"s":""}</div>
+            <div style={{maxHeight:300,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {parsed.map((c,i)=>(
+                <div key={i} style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:8,padding:"12px 14px"}}>
+                  <div style={{fontSize:14,color:"#d2d2ea",fontWeight:500}}>{c.name}</div>
+                  {c.company&&<div style={{fontSize:12,color:"#6b6b8a"}}>{c.company}</div>}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",marginTop:7}}>
+                    {c.email&&<span style={{fontSize:11,color:"#7c6af7"}}>✉ {c.email}</span>}
+                    {c.phone&&<span style={{fontSize:11,color:"#60a5fa"}}>☎ {c.phone}</span>}
+                    {c.address&&<span style={{fontSize:11,color:"#8a8aa8"}}>⌂ {c.address}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
+              <button onClick={()=>{setStatus("idle");setParsed([]);}} style={S.outlineBtn}>← Back</button>
+              <button onClick={()=>onImport(parsed)} style={S.primaryBtn}>Import {parsed.length} Contact{parsed.length!==1?"s":""} →</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── CONTACT MODAL ────────────────────────────────────────────────────────────
+function ContactModal({data,onSave,onClose}){
+  const [f,setF]=useState({name:"",company:"",email:"",phone:"",address:"",stage:"Negotiation",value:"",barriers:[],barrierNote:"",objection:"",workAreas:[],...data});
+  const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+  function toggleArea(a){setF(p=>({...p,workAreas:p.workAreas.includes(a)?p.workAreas.filter(x=>x!==a):[...p.workAreas,a]}));}
+  return(
+    <div style={S.overlay}><div style={{...S.modal,maxHeight:"90vh",overflowY:"auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Contact</h2>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        {[["name","Name *"],["company","Company"],["email","Email"],["phone","Phone"]].map(([k,l])=>(
+          <div key={k}><label style={S.label}>{l}</label><input value={f[k]||""} onChange={set(k)} style={S.input}/></div>
+        ))}
+        <div style={{gridColumn:"1/-1"}}><label style={S.label}>Address</label><input value={f.address||""} onChange={set("address")} placeholder="123 Main St, City, State ZIP" style={S.input}/></div>
+        <div><label style={S.label}>Stage</label><select value={f.stage} onChange={set("stage")} style={{...S.input,cursor:"pointer"}}>{STAGES.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+        <div><label style={S.label}>Deal Value ($)</label><input type="number" value={f.value||""} onChange={set("value")} placeholder="0" style={S.input}/></div>
+        {/* Work Areas */}
+        <div style={{gridColumn:"1/-1",borderTop:"1px solid #1e1e2e",paddingTop:12,marginTop:4}}>
+          <label style={S.label}>Work Areas</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+            {WORK_AREAS.map(a=>{const on=(f.workAreas||[]).includes(a);return(
+              <button key={a} type="button" onClick={()=>toggleArea(a)}
+                style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${on?"#7c6af7":"#2a2a4a"}`,background:on?"#1e1e3a":"transparent",color:on?"#a89af7":"#6b6b8a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                {a}
+              </button>
+            );})}
+          </div>
+        </div>
+        {/* Barrier section */}
+        <div style={{gridColumn:"1/-1",borderTop:"1px solid #1e1e2e",paddingTop:12,marginTop:4}}>
+          <label style={{...S.label,color:"#f97316"}}>⚠ Project Barriers</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+            {BARRIERS.map(b=>{const on=(f.barriers||[]).includes(b);return(
+              <button key={b} type="button" onClick={()=>setF(p=>({...p,barriers:on?p.barriers.filter(x=>x!==b):[...p.barriers,b]}))}
+                style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${on?"#f97316":"#2a2a4a"}`,background:on?"#2a1800":"transparent",color:on?"#fb923c":"#6b6b8a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.1s"}}>
+                {b}
+              </button>
+            );})}
+          </div>
+        </div>
+        {(f.barriers||[]).length>0&&(
+          <div style={{gridColumn:"1/-1"}}>
+            <label style={S.label}>Barrier Notes</label>
+            <input value={f.barrierNote||""} onChange={set("barrierNote")} placeholder="Describe the barriers or next steps…" style={{...S.input,borderColor:"#f97316"}}/>
+          </div>
+        )}
+        {/* Objection */}
+        <div style={{gridColumn:"1/-1",borderTop:"1px solid #1e1e2e",paddingTop:12,marginTop:4}}>
+          <label style={{...S.label,color:"#a78bfa"}}>🧠 Primary Objection</label>
+          <select value={f.objection||""} onChange={set("objection")} style={{...S.input,cursor:"pointer",borderColor:f.objection&&f.objection!=="No objection"?"#a78bfa":"#1e1e2e"}}>
+            <option value="">— None recorded —</option>
+            {OBJECTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20}}>
+        <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
+        <button onClick={()=>f.name.trim()&&onSave(f)} style={{...S.primaryBtn,opacity:f.name.trim()?1:0.4}}>Save</button>
+      </div>
+    </div></div>
+  );
+}
+
+// ─── TASK MODAL ───────────────────────────────────────────────────────────────
+function TaskModal({data,contacts,onSave,onClose}){
+  const [f,setF]=useState({title:"",dueDate:"",priority:"Medium",done:false,contactId:"",...data});
+  const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+
+  function openCalendar(){
+    const contact=contacts.find(c=>c.id===f.contactId);
+    const title=encodeURIComponent(f.title+(contact?` — ${contact.name}`:""));
+    const details=encodeURIComponent(contact?`Client: ${contact.name}\nPhone: ${contact.phone||"—"}\nCRM Follow-Up`:"CRM Follow-Up");
+    let dates="";
+    if(f.dueDate){
+      const d=f.dueDate.replace(/-/g,"");
+      dates=`${d}/${d}`;
+    }
+    const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}${dates?`&dates=${dates}`:""}`;
+    window.open(url,"_blank");
+  }
+
+  return(
+    <div style={S.overlay}><div style={S.modal}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Task</h2>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        <div>
+          <label style={S.label}>Task Type *</label>
+          <select value={f.title} onChange={set("title")} style={{...S.input,cursor:"pointer"}}>
+            <option value="">— Select a task —</option>
+            <optgroup label="Follow Ups">
+              <option value="Follow up on project">Follow up on project</option>
+              <option value="Follow up on proposal">Follow up on proposal</option>
+              <option value="Follow up on payment">Follow up on payment</option>
+              <option value="Follow up on contract">Follow up on contract</option>
+              <option value="Follow up on paperwork">Follow up on paperwork</option>
+            </optgroup>
+            <optgroup label="Adjustments">
+              <option value="Adjustment to project">Adjustment to project</option>
+              <option value="Adjustment to proposal">Adjustment to proposal</option>
+              <option value="Adjustment to contract">Adjustment to contract</option>
+              <option value="Adjustment to schedule">Adjustment to schedule</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="Schedule site visit">Schedule site visit</option>
+              <option value="Send documents">Send documents</option>
+              <option value="Call client">Call client</option>
+              <option value="Custom">Custom…</option>
+            </optgroup>
+          </select>
+          {f.title==="Custom"&&(
+            <input
+              placeholder="Type custom task…"
+              onChange={e=>setF(p=>({...p,title:e.target.value}))}
+              style={{...S.input,marginTop:8}}
+              autoFocus
+            />
+          )}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div><label style={S.label}>Due Date</label><input type="date" value={f.dueDate} onChange={set("dueDate")} style={{...S.input,colorScheme:"dark",cursor:"pointer"}}/></div>
+          <div><label style={S.label}>Priority</label><select value={f.priority} onChange={set("priority")} style={{...S.input,cursor:"pointer"}}>{["Low","Medium","High"].map(p=><option key={p}>{p}</option>)}</select></div>
+        </div>
+        <div><label style={S.label}>Link to Contact</label>
+          <select value={f.contactId||""} onChange={set("contactId")} style={{...S.input,cursor:"pointer"}}>
+            <option value="">— none —</option>
+            {contacts.map(c=><option key={c.id} value={c.id}>{c.name} · {c.company}</option>)}
+          </select>
+        </div>
+        {/* Calendar button — shows once there's a title */}
+        {f.title.trim()&&f.dueDate&&(
+          <button onClick={openCalendar} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",borderRadius:8,border:"1px solid #2a2a4a",background:"transparent",color:"#a89af7",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"background 0.15s"}} className="hov-action">
+            📅 Add to Google Calendar
+          </button>
+        )}
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20}}>
+        <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
+        <button onClick={()=>f.title.trim()&&onSave(f)} style={{...S.primaryBtn,opacity:f.title.trim()?1:0.4}}>Save Task</button>
+      </div>
+    </div></div>
+  );
+}
+
+// ─── CALENDAR ─────────────────────────────────────────────────────────────────
+function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
+  const [currentDate,setCurrentDate]=useState(new Date());
+  const [selectedDay,setSelectedDay]=useState(null);
+  const cMap=Object.fromEntries(contacts.map(c=>[c.id,c]));
+  const year=currentDate.getFullYear();
+  const month=currentDate.getMonth();
+  const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const firstDayOfWeek=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const today=new Date();
+  const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+  function ds(d){return `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;}
+  function itemsForDate(dateStr){
+    const calEvents=events.filter(e=>e.date===dateStr);
+    const tasksDue=tasks.filter(t=>!t.done&&t.dueDate===dateStr);
+    return {calEvents,tasksDue};
+  }
+
+  const cells=[];
+  for(let i=0;i<firstDayOfWeek;i++) cells.push(null);
+  for(let d=1;d<=daysInMonth;d++) cells.push(d);
+
+  const selItems=selectedDay?itemsForDate(ds(selectedDay)):null;
+
+  function prevMonth(){setCurrentDate(new Date(year,month-1,1));setSelectedDay(null);}
+  function nextMonth(){setCurrentDate(new Date(year,month+1,1));setSelectedDay(null);}
+  function goToday(){setCurrentDate(new Date());setSelectedDay(null);}
+
+  return(
+    <div style={{animation:"fadeUp 0.3s ease",display:"flex",gap:20,alignItems:"flex-start"}}>
+      {/* Grid */}
+      <div style={{flex:1}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={prevMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>←</button>
+            <button onClick={nextMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>→</button>
+            <button onClick={goToday} style={{...S.outlineBtn,padding:"6px 12px",fontSize:11}}>Today</button>
+          </div>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#e2e2f0",fontWeight:400}}>{MONTHS[month]} {year}</div>
+          <div style={{width:120}}/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>(
+            <div key={d} style={{textAlign:"center",fontSize:11,color:"#5a5a7a",padding:"6px 0",textTransform:"uppercase",letterSpacing:"0.08em"}}>{d}</div>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+          {cells.map((day,i)=>{
+            if(!day) return <div key={`e${i}`} style={{minHeight:80}}/>;
+            const dateStr=ds(day);
+            const {calEvents,tasksDue}=itemsForDate(dateStr);
+            const total=calEvents.length+tasksDue.length;
+            const isToday=dateStr===todayStr;
+            const isSel=selectedDay===day;
+            return(
+              <div key={day} onClick={()=>setSelectedDay(isSel?null:day)} className="hov-card"
+                style={{minHeight:80,padding:"8px 8px",borderRadius:8,cursor:"pointer",background:isSel?"#13132a":isToday?"#0e0e1e":"#0a0a14",border:`1px solid ${isSel?"#7c6af7":isToday?"#3a3a5a":"#14142a"}`,transition:"all 0.15s"}}>
+                <div style={{fontSize:13,color:isToday?"#a89af7":"#d2d2ea",fontWeight:isToday?600:400,marginBottom:4}}>{day}</div>
+                {calEvents.slice(0,2).map(e=>(
+                  <div key={e.id} style={{fontSize:10,color:"#a89af7",background:"#1a1a38",borderRadius:3,padding:"2px 5px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                    {e.time?e.time.slice(0,5)+" ":""}{e.title}
+                  </div>
+                ))}
+                {tasksDue.slice(0,2).map(t=>(
+                  <div key={t.id} style={{fontSize:10,color:"#fbbf24",background:"#2a1e00",borderRadius:3,padding:"2px 5px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                    ✓ {t.title}
+                  </div>
+                ))}
+                {total>2&&<div style={{fontSize:10,color:"#5a5a7a"}}>+{total-2} more</div>}
+              </div>
+            );
+          })}
+        </div>
+        {/* Legend */}
+        <div style={{display:"flex",gap:16,marginTop:14,padding:"10px 12px",background:"#0a0a14",border:"1px solid #14142a",borderRadius:8,width:"fit-content"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:10,height:10,borderRadius:2,background:"#1a1a38",border:"1px solid #a89af7"}}/>
+            <span style={{fontSize:11,color:"#6b6b8a"}}>Appointment</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:10,height:10,borderRadius:2,background:"#2a1e00",border:"1px solid #fbbf24"}}/>
+            <span style={{fontSize:11,color:"#6b6b8a"}}>Task due</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Day detail panel */}
+      {selectedDay&&(
+        <div style={{width:280,background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20,animation:"slideIn 0.2s ease",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:16,color:"#e2e2f0"}}>{MONTHS[month]} {selectedDay}</div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>onAddEvent(ds(selectedDay))} style={{...S.primaryBtn,fontSize:11,padding:"5px 10px"}}>+ Add</button>
+              <button onClick={()=>setSelectedDay(null)} style={{...S.outlineBtn,padding:"5px 8px",fontSize:12}}>✕</button>
+            </div>
+          </div>
+          {selItems.calEvents.length===0&&selItems.tasksDue.length===0&&(
+            <div style={{fontSize:13,color:"#3a3a5a"}}>Nothing scheduled.</div>
+          )}
+          {selItems.calEvents.map(e=>{
+            const contact=cMap[e.contactId];
+            return(
+              <div key={e.id} style={{background:"#0e0e1e",border:"1px solid #1e1e3a",borderRadius:8,padding:"12px 14px",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{e.title}</div>
+                  <div style={{display:"flex",gap:4,flexShrink:0}}>
+                    <button onClick={()=>onEditEvent(e)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">✎</button>
+                    <button onClick={()=>onDeleteEvent(e.id)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">✕</button>
+                  </div>
+                </div>
+                {e.time&&<div style={{fontSize:11,color:"#7c6af7",marginTop:2}}>🕐 {e.time}{e.duration?` · ${e.duration} min`:""}</div>}
+                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>👤 {contact.name}{contact.company?` · ${contact.company}`:""}</div>}
+                {e.notes&&<div style={{fontSize:11,color:"#6b6b8a",marginTop:4,lineHeight:1.5}}>{e.notes}</div>}
+              </div>
+            );
+          })}
+          {selItems.tasksDue.map(t=>{
+            const contact=cMap[t.contactId];
+            return(
+              <div key={t.id} style={{background:"#1a1400",border:"1px solid #fbbf2430",borderRadius:8,padding:"12px 14px",marginBottom:8}}>
+                <div style={{fontSize:13,color:"#fbbf24",fontWeight:500}}>✓ {t.title}</div>
+                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>👤 {contact.name}{contact.company?` · ${contact.company}`:""}</div>}
+                <div style={{fontSize:10,color:"#4a4a6a",marginTop:3}}>Task due</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── EVENT MODAL ───────────────────────────────────────────────────────────────
+function EventModal({data,contacts,onSave,onClose}){
+  const [f,setF]=useState({title:"",date:"",time:"",duration:"60",contactId:"",notes:"",...data});
+  const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+  const canSave=f.title.trim()&&f.date;
+  return(
+    <div style={S.overlay}><div style={{...S.modal,maxHeight:"90vh",overflowY:"auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Appointment</h2>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        <div>
+          <label style={S.label}>Title *</label>
+          <input value={f.title} onChange={set("title")} placeholder="e.g. Site visit, Proposal review…" style={S.input} autoFocus/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div>
+            <label style={S.label}>Date *</label>
+            <input type="date" value={f.date} onChange={set("date")} style={{...S.input,colorScheme:"dark",cursor:"pointer"}}/>
+          </div>
+          <div>
+            <label style={S.label}>Time</label>
+            <input type="time" value={f.time} onChange={set("time")} style={{...S.input,colorScheme:"dark",cursor:"pointer"}}/>
+          </div>
+        </div>
+        <div>
+          <label style={S.label}>Duration</label>
+          <select value={f.duration} onChange={set("duration")} style={{...S.input,cursor:"pointer"}}>
+            {["15","30","45","60","90","120"].map(d=><option key={d} value={d}>{d} min</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={S.label}>Link to Contact</label>
+          <select value={f.contactId||""} onChange={set("contactId")} style={{...S.input,cursor:"pointer"}}>
+            <option value="">— none —</option>
+            {contacts.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` · ${c.company}`:""}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={S.label}>Notes</label>
+          <textarea value={f.notes||""} onChange={set("notes")} placeholder="Any details…" style={{...S.input,height:80,resize:"vertical",lineHeight:1.6}}/>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20}}>
+        <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
+        <button onClick={()=>canSave&&onSave(f)} style={{...S.primaryBtn,opacity:canSave?1:0.4}}>Save Appointment</button>
+      </div>
+    </div></div>
+  );
+}
+
+// ─── SHARED STYLES ────────────────────────────────────────────────────────────
+const S={
+  primaryBtn:{padding:"8px 16px",borderRadius:8,border:"none",background:"#7c6af7",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"opacity 0.15s"},
+  outlineBtn:{padding:"8px 16px",borderRadius:8,border:"1px solid #1e1e2e",background:"transparent",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"},
+  input:{width:"100%",padding:"9px 12px",background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:8,color:"#d2d2ea",fontSize:13,fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s"},
+  label:{display:"block",fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5},
+  cardTitle:{fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10,fontWeight:600},
+  overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(4px)"},
+  modal:{background:"#0d0d1a",border:"1px solid #1e1e2e",borderRadius:14,padding:28,width:480,maxWidth:"95vw",animation:"fadeUp 0.2s ease"},
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
