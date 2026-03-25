@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>PipelineOS — Nathan Vega</title>
+<title>PipelineOS â Nathan Vega</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -44,10 +44,10 @@
 <div id="root"></div>
 
 <script>
-// ─── CONFIG — Fill these in after setting up Supabase ───────────────────────
+// âââ CONFIG â Fill these in after setting up Supabase âââââââââââââââââââââââ
 const SUPABASE_URL = "https://wyeifrvhubffdljkqcad.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZWlmcnZodWJmZmRsamtxY2FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Njk0ODMsImV4cCI6MjA4NzQ0NTQ4M30.APTz3xwVsW1WhIUQq-EY-EbaLDmYsSU8DZ2-lm1Oovo";
-// ─────────────────────────────────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 </script>
 
 <script type="text/babel">
@@ -61,11 +61,11 @@ const STAGE_COLOR = {
 };
 const PRIORITY_COLOR = {Low:"#6b7280",Medium:"#fbbf24",High:"#f87171"};
 function uid(){return Math.random().toString(36).slice(2,10);}
-function fmtDate(d){return d?new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"—";}
+function fmtDate(d){return d?new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"â";}
 function fmtMoney(v){return "$"+Number(v||0).toLocaleString();}
 function initials(name=""){return name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();}
 
-// ─── DATA LAYER ──────────────────────────────────────────────────────────────
+// âââ DATA LAYER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadData(){
   try{
     const {data,error}=await supabase.from("crm_data").select("data").eq("user_key","nathan_vega").single();
@@ -79,7 +79,7 @@ async function saveData(state){
   }catch(e){console.warn("Save failed",e);}
 }
 
-// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+// âââ ROOT APP âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function App(){
   const isMobile=window.innerWidth<=768;
   const [contacts,setContacts]=useState([]);
@@ -161,18 +161,18 @@ function App(){
   if(!ready) return(
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",flexDirection:"column",gap:16}}>
       <div style={{width:32,height:32,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <div style={{fontSize:13,color:"#5a5a7a"}}>Loading your CRM…</div>
+      <div style={{fontSize:13,color:"#5a5a7a"}}>Loading your CRMâ¦</div>
     </div>
   );
 
-  // ── MOBILE VIEW ─────────────────────────────────────────────────────────────
+  // ââ MOBILE VIEW âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   if(isMobile){
     const mobileNav=[
-      {id:"dashboard",icon:"▦",label:"Home"},
-      {id:"contacts",icon:"◎",label:"Contacts"},
-      {id:"tasks",icon:"▣",label:"Tasks"},
-      {id:"calendar",icon:"◫",label:"Calendar"},
-      {id:"pipeline",icon:"⬣",label:"Pipeline"},
+      {id:"dashboard",icon:"â¦",label:"Home"},
+      {id:"contacts",icon:"â",label:"Contacts"},
+      {id:"tasks",icon:"â£",label:"Tasks"},
+      {id:"calendar",icon:"â«",label:"Calendar"},
+      {id:"pipeline",icon:"â¬£",label:"Pipeline"},
     ];
     return(
       <div style={{height:"100vh",background:"#080810",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -180,12 +180,12 @@ function App(){
         <div style={{padding:"12px 16px",borderBottom:"1px solid #14142a",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0"}}>Pipeline<span style={{color:"#7c6af7"}}>OS</span></div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {saveStatus&&<span style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"saving…":"✓ saved"}</span>}
+            {saveStatus&&<span style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"savingâ¦":"â saved"}</span>}
             {tab==="contacts"&&<button onClick={()=>setModal({type:"contact",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Contact</button>}
             {tab==="tasks"&&<button onClick={()=>setModal({type:"task",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Task</button>}
             {tab==="calendar"&&<button onClick={()=>setModal({type:"event",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Appt</button>}
             {tab==="pipeline"&&<button onClick={()=>setModal({type:"contact",data:{}})} style={{...S.primaryBtn,padding:"7px 12px",fontSize:12}}>+ Contact</button>}
-            {tab==="dashboard"&&<button onClick={()=>setModal({type:"import"})} style={{...S.primaryBtn,background:"transparent",border:"1px dashed #2a2a4a",color:"#7c6af7",padding:"7px 10px",fontSize:11}}>✦ Import</button>}
+            {tab==="dashboard"&&<button onClick={()=>setModal({type:"import"})} style={{...S.primaryBtn,background:"transparent",border:"1px dashed #2a2a4a",color:"#7c6af7",padding:"7px 10px",fontSize:11}}>â¦ Import</button>}
           </div>
         </div>
         {/* Content */}
@@ -216,13 +216,13 @@ function App(){
     );
   }
 
-  // ── DESKTOP VIEW ────────────────────────────────────────────────────────────
+  // ââ DESKTOP VIEW ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const NAV=[
-    {id:"dashboard",icon:"▦",label:"Dashboard"},
-    {id:"pipeline",icon:"⬣",label:"Pipeline"},
-    {id:"contacts",icon:"◎",label:"Contacts"},
-    {id:"tasks",icon:"▣",label:"Tasks"},
-    {id:"calendar",icon:"◫",label:"Calendar"},
+    {id:"dashboard",icon:"â¦",label:"Dashboard"},
+    {id:"pipeline",icon:"â¬£",label:"Pipeline"},
+    {id:"contacts",icon:"â",label:"Contacts"},
+    {id:"tasks",icon:"â£",label:"Tasks"},
+    {id:"calendar",icon:"â«",label:"Calendar"},
   ];
 
   return(
@@ -243,8 +243,8 @@ function App(){
           ))}
         </nav>
         <div style={{padding:"12px 10px",borderTop:"1px solid #14142a",display:"flex",flexDirection:"column",gap:6}}>
-          {saveStatus&&<div style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",textAlign:"center",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"saving…":"✓ saved"}</div>}
-          <button onClick={()=>setModal({type:"import"})} className="hov-btn" style={{padding:"9px 12px",borderRadius:8,border:"1px dashed #2a2a4a",background:"transparent",color:"#7c6af7",fontSize:12,fontWeight:500,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",textAlign:"left"}}>✦ AI Import Contacts</button>
+          {saveStatus&&<div style={{fontSize:10,color:saveStatus==="saving"?"#5a5a7a":"#34d399",textAlign:"center",fontFamily:"'DM Mono',monospace"}}>{saveStatus==="saving"?"savingâ¦":"â saved"}</div>}
+          <button onClick={()=>setModal({type:"import"})} className="hov-btn" style={{padding:"9px 12px",borderRadius:8,border:"1px dashed #2a2a4a",background:"transparent",color:"#7c6af7",fontSize:12,fontWeight:500,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",textAlign:"left"}}>â¦ AI Import Contacts</button>
           <button onClick={()=>setModal({type:"contact",data:{}})} className="hov-btn" style={{padding:"9px 12px",borderRadius:8,border:"none",background:"#7c6af7",color:"#fff",fontSize:12,fontWeight:600,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>+ New Contact</button>
         </div>
       </aside>
@@ -284,7 +284,7 @@ function App(){
   );
 }
 
-// ─── MOBILE QUICK-ADD ─────────────────────────────────────────────────────────
+// âââ MOBILE QUICK-ADD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const WORK_AREAS=["Attic","Crawlspace","Kneewall","Basement","Walls","Air Sealing","HVAC","Other"];
 const OBJECTIONS=["Price / Financing","Waiting on Spouse / Partner","Getting Other Quotes","Timing / Too Busy","No objection"];
 function fmtAreas(areas){
@@ -340,7 +340,7 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
     setTimeout(()=>setDetailNoteSaved(false),2000);
   }
   function logTouch(icon,label){
-    onAddNote(detailContact.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`);
+    onAddNote(detailContact.id,`${icon} ${label} â ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`);
     setDetailNoteSaved(true);
     setTimeout(()=>setDetailNoteSaved(false),2000);
   }
@@ -401,17 +401,17 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
 
       {/* Tabs */}
       <div style={{display:"flex",margin:"16px 20px 0",background:"#0e0e1e",borderRadius:12,padding:4,flexShrink:0}}>
-        {[["add","➕ Add"],["search","🔍 Search"],["notes","📝 Notes"]].map(([id,label])=>(
+        {[["add","â Add"],["search","ð Search"],["notes","ð Notes"]].map(([id,label])=>(
           <button key={id} onClick={()=>{setMobileTab(id);setSearch("");}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:mobileTab===id?"#7c6af7":"transparent",color:mobileTab===id?"#fff":"#5a5a7a",fontSize:13,fontWeight:mobileTab===id?600:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s"}}>{label}</button>
         ))}
       </div>
 
-      {/* ── ADD TAB ── */}
+      {/* ââ ADD TAB ââ */}
       {mobileTab==="add"&&(
         <div style={{flex:1,overflowY:"auto",padding:"20px 20px 24px",display:"flex",flexDirection:"column",gap:14}}>
           {saved?(
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-              <div style={{fontSize:60}}>✓</div>
+              <div style={{fontSize:60}}>â</div>
               <div style={{fontFamily:"'Instrument Serif',serif",fontSize:26,color:"#34d399"}}>Saved!</div>
               <div style={{fontSize:13,color:"#5a5a7a",textAlign:"center"}}>{savedName||"Client"} added to your CRM{f.appointmentDate?" with appointment":""}</div>
             </div>
@@ -419,13 +419,13 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
             <>
               {/* Mode toggle */}
               <div style={{display:"flex",background:"#0e0e1e",borderRadius:10,padding:3,flexShrink:0}}>
-                {[["form","✏️ Form"],["paste","📋 Paste"]].map(([m,label])=>(
+                {[["form","âï¸ Form"],["paste","ð Paste"]].map(([m,label])=>(
                   <button key={m} onClick={()=>{setAddMode(m);setF(empty);setRaw("");setPasteStep("paste");}}
                     style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:addMode===m?"#7c6af7":"transparent",color:addMode===m?"#fff":"#5a5a7a",fontSize:14,fontWeight:addMode===m?600:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s"}}>{label}</button>
                 ))}
               </div>
 
-              {/* ── FORM MODE ── */}
+              {/* ââ FORM MODE ââ */}
               {addMode==="form"&&(
                 <>
                   <div>
@@ -459,18 +459,18 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
                 </>
               )}
 
-              {/* ── PASTE MODE ── */}
+              {/* ââ PASTE MODE ââ */}
               {addMode==="paste"&&pasteStep==="paste"&&(
                 <>
-                  <div style={{fontSize:14,color:"#a2a2c2",lineHeight:1.6}}>Paste client info — name, phone, address in any order.</div>
-                  <textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="Paste client info here…" autoCorrect="off" autoCapitalize="none"
+                  <div style={{fontSize:14,color:"#a2a2c2",lineHeight:1.6}}>Paste client info â name, phone, address in any order.</div>
+                  <textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="Paste client info hereâ¦" autoCorrect="off" autoCapitalize="none"
                     style={{...inp,minHeight:200,resize:"none",lineHeight:1.6,fontSize:15,padding:"16px 14px"}}/>
-                  <button onClick={extract} disabled={!raw.trim()} style={bigBtn(raw.trim())}>Fill In Fields →</button>
+                  <button onClick={extract} disabled={!raw.trim()} style={bigBtn(raw.trim())}>Fill In Fields â</button>
                 </>
               )}
               {addMode==="paste"&&pasteStep==="review"&&(
                 <>
-                  <div style={{fontSize:13,color:"#7c6af7"}}>✦ Review and edit, then add date &amp; work areas</div>
+                  <div style={{fontSize:13,color:"#7c6af7"}}>â¦ Review and edit, then add date &amp; work areas</div>
                   <div>
                     <label style={lbl}>Name *</label>
                     <input value={f.name} onChange={set("name")} inputMode="text" autoCapitalize="words" autoCorrect="off" style={inpActive(f.name)}/>
@@ -499,7 +499,7 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
                     </div>
                   </div>
                   <div style={{display:"flex",gap:10}}>
-                    <button onClick={()=>setPasteStep("paste")} style={{flex:1,padding:"16px",borderRadius:14,border:"1px solid #1e1e2e",background:"transparent",color:"#8a8aa8",fontSize:15,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>← Back</button>
+                    <button onClick={()=>setPasteStep("paste")} style={{flex:1,padding:"16px",borderRadius:14,border:"1px solid #1e1e2e",background:"transparent",color:"#8a8aa8",fontSize:15,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>â Back</button>
                     <button onClick={handleSave} disabled={!f.name.trim()} style={{...bigBtn(f.name.trim()),flex:2,padding:"16px",fontSize:16}}>Save Client</button>
                   </div>
                 </>
@@ -509,17 +509,17 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
         </div>
       )}
 
-      {/* ── SEARCH TAB ── */}
+      {/* ââ SEARCH TAB ââ */}
       {mobileTab==="search"&&!detailContact&&(
         <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:12}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, phone, or address…"
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, phone, or addressâ¦"
             autoCorrect="off" autoCapitalize="none" style={{...inp,fontSize:16}}/>
           {search.trim()&&filteredContacts.length===0&&<div style={{fontSize:13,color:"#3a3a5a"}}>No contacts found.</div>}
           {filteredContacts.map(c=>(
             <button key={c.id} onClick={()=>openDetail(c)} style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:12,padding:"14px 16px",textAlign:"left",width:"100%",cursor:"pointer"}}>
               <div style={{fontSize:16,color:"#e2e2f0",fontWeight:500}}>{c.name}</div>
-              {c.phone&&<div style={{fontSize:14,color:"#7c6af7",marginTop:6}}>📞 {c.phone}</div>}
-              {c.address&&<div style={{fontSize:13,color:"#6b6b8a",marginTop:4}}>📍 {c.address}</div>}
+              {c.phone&&<div style={{fontSize:14,color:"#7c6af7",marginTop:6}}>ð {c.phone}</div>}
+              {c.address&&<div style={{fontSize:13,color:"#6b6b8a",marginTop:4}}>ð {c.address}</div>}
               <div style={{fontSize:11,color:STAGE_COLOR[c.stage],marginTop:8,background:`${STAGE_COLOR[c.stage]}15`,display:"inline-block",padding:"2px 8px",borderRadius:20}}>{c.stage}</div>
             </button>
           ))}
@@ -527,26 +527,26 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
         </div>
       )}
 
-      {/* ── CONTACT DETAIL / EDIT ── */}
+      {/* ââ CONTACT DETAIL / EDIT ââ */}
       {mobileTab==="search"&&detailContact&&detailF&&(
         <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:14}}>
           {/* Header */}
           <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-            <button onClick={closeDetail} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0,flexShrink:0}}>← Back</button>
+            <button onClick={closeDetail} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0,flexShrink:0}}>â Back</button>
             <div style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",flex:1}}>{detailContact.name}</div>
-            {detailContact.phone&&<a href={`tel:${detailContact.phone}`} style={{color:"#7c6af7",fontSize:22,textDecoration:"none",flexShrink:0}}>📞</a>}
+            {detailContact.phone&&<a href={`tel:${detailContact.phone}`} style={{color:"#7c6af7",fontSize:22,textDecoration:"none",flexShrink:0}}>ð</a>}
           </div>
 
           {/* Quick touch log */}
           <div style={{display:"flex",gap:6}}>
-            {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
+            {[["ð","Called"],["ð¬","Texted"],["ðï¸","Left VM"]].map(([icon,label])=>(
               <button key={label} onClick={()=>logTouch(icon,label)}
                 style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
                 {icon} {label}
               </button>
             ))}
           </div>
-          {detailNoteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Logged!</div>}
+          {detailNoteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>â Logged!</div>}
 
           {/* Edit fields */}
           <div style={{borderTop:"1px solid #1e1e2e",paddingTop:14,display:"flex",flexDirection:"column",gap:12}}>
@@ -575,14 +575,14 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
               </div>
             </div>
             <div>
-              <label style={{...lbl,color:"#a78bfa"}}>🧠 Objection</label>
+              <label style={{...lbl,color:"#a78bfa"}}>ð§  Objection</label>
               <select value={detailF.objection||""} onChange={setD("objection")} style={{...inpActive(detailF.objection),cursor:"pointer"}}>
-                <option value="">— None —</option>
+                <option value="">â None â</option>
                 {OBJECTIONS.map(o=><option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label style={{...lbl,color:"#f97316"}}>⚠ Barriers</label>
+              <label style={{...lbl,color:"#f97316"}}>â  Barriers</label>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
                 {BARRIERS.map(b=>{const on=(detailF.barriers||[]).includes(b);return(
                   <button key={b} type="button" onClick={()=>setDetailF(p=>({...p,barriers:on?p.barriers.filter(x=>x!==b):[...p.barriers,b]}))}
@@ -592,14 +592,14 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
                 );})}
               </div>
             </div>
-            {detailSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Changes saved!</div>}
+            {detailSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"10px",fontSize:13,color:"#34d399",textAlign:"center"}}>â Changes saved!</div>}
             <button onClick={saveDetail} disabled={!detailF.name.trim()} style={{...bigBtn(detailF.name.trim()),marginTop:2}}>Save Changes</button>
           </div>
 
           {/* Notes */}
           <div style={{borderTop:"1px solid #1e1e2e",paddingTop:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{fontSize:11,color:"#5a5a7a",textTransform:"uppercase",letterSpacing:"0.08em"}}>Notes</div>
-            <textarea value={detailNoteText} onChange={e=>setDetailNoteText(e.target.value)} placeholder="Add a note…"
+            <textarea value={detailNoteText} onChange={e=>setDetailNoteText(e.target.value)} placeholder="Add a noteâ¦"
               style={{...inp,minHeight:90,resize:"none",lineHeight:1.6,fontSize:14,padding:"14px"}}/>
             <button onClick={addDetailNote} disabled={!detailNoteText.trim()} style={bigBtn(detailNoteText.trim())}>Save Note</button>
             {notes.filter(n=>n.contactId===detailContact.id).sort((a,b)=>b.createdAt-a.createdAt).slice(0,8).map(n=>(
@@ -612,13 +612,13 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
         </div>
       )}
 
-      {/* ── NOTES TAB ── */}
+      {/* ââ NOTES TAB ââ */}
       {mobileTab==="notes"&&(
         <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:14}}>
           {!selectedContact?(
             <>
               <div style={{fontSize:14,color:"#a2a2c2"}}>Pick a client to add a note:</div>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search client…"
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search clientâ¦"
                 autoCorrect="off" autoCapitalize="none" style={{...inp,fontSize:16}}/>
               {contacts.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())).slice(0,15).map(c=>(
                 <button key={c.id} onClick={()=>{setSelectedContact(c);setSearch("");}}
@@ -634,10 +634,10 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
           ):(
             <>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <button onClick={()=>{setSelectedContact(null);setNoteText("");}} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0}}>← Back</button>
+                <button onClick={()=>{setSelectedContact(null);setNoteText("");}} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:0}}>â Back</button>
                 <div style={{fontSize:15,color:"#e2e2f0",fontWeight:500}}>{selectedContact.name}</div>
               </div>
-              {noteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"12px",fontSize:13,color:"#34d399",textAlign:"center"}}>✓ Note saved!</div>}
+              {noteSaved&&<div style={{background:"#0d2a1a",border:"1px solid #1a4a2a",borderRadius:10,padding:"12px",fontSize:13,color:"#34d399",textAlign:"center"}}>â Note saved!</div>}
               <div>
                 <label style={{...lbl,marginBottom:8}}>Add Note</label>
                 <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="What happened with this client?"
@@ -658,7 +658,7 @@ function MobileQuickAdd({onSave,onUpdate,contacts,notes,onAddNote}){
   );
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+// âââ DASHBOARD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onToggleTask,onContactClick,onDraftFollowUp}){
   const cMap=Object.fromEntries(contacts.map(c=>[c.id,c]));
   const upcoming=tasks.filter(t=>!t.done).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,5);
@@ -697,15 +697,15 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
       {contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).length>0&&(
         <div style={{background:"#120900",border:"1px solid #f9731630",borderRadius:12,padding:20,marginBottom:16}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-            <div style={{...S.cardTitle,color:"#f97316"}}>⚠ Barrier Watch</div>
+            <div style={{...S.cardTitle,color:"#f97316"}}>â  Barrier Watch</div>
             <span style={{fontSize:11,background:"#3a1a00",color:"#f97316",padding:"2px 8px",borderRadius:10}}>{contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).length} blocked</span>
           </div>
           {contacts.filter(c=>(c.barriers||[]).length>0&&!["Closed Won","Closed Lost"].includes(c.stage)).map(c=>(
             <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#1a0e00",borderRadius:8,marginBottom:6,cursor:"pointer"}} onClick={()=>onContactClick(c)}>
               <div style={{width:34,height:34,borderRadius:"50%",background:"#f9731618",color:"#f97316",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
               <div style={{flex:1}}>
-                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>· {c.company||c.address}</span></div>
-                <div style={{fontSize:11,color:"#f97316",marginTop:1}}>🚧 {(c.barriers||[]).join(", ")}{c.barrierNote&&` — ${c.barrierNote}`}</div>
+                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>Â· {c.company||c.address}</span></div>
+                <div style={{fontSize:11,color:"#f97316",marginTop:1}}>ð§ {(c.barriers||[]).join(", ")}{c.barrierNote&&` â ${c.barrierNote}`}</div>
               </div>
               <span style={{fontSize:11,color:STAGE_COLOR[c.stage],background:`${STAGE_COLOR[c.stage]}15`,padding:"2px 7px",borderRadius:20,flexShrink:0}}>{c.stage}</span>
             </div>
@@ -719,18 +719,18 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
           <div style={S.cardTitle}>Today's Follow-Up Digest</div>
           {digestContacts.length>0&&<span style={{fontSize:11,background:"#3a1a4a",color:"#c87af7",padding:"2px 8px",borderRadius:10}}>{digestContacts.length} need attention</span>}
         </div>
-        {digestContacts.length===0&&<div style={{fontSize:13,color:"#3a3a5a"}}>🎉 All caught up — no follow-ups needed today.</div>}
+        {digestContacts.length===0&&<div style={{fontSize:13,color:"#3a3a5a"}}>ð All caught up â no follow-ups needed today.</div>}
         {digestContacts.map(c=>(
           <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6}}>
             <div style={{width:34,height:34,borderRadius:"50%",background:`${STAGE_COLOR[c.stage]}18`,color:STAGE_COLOR[c.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
             <div style={{flex:1,cursor:"pointer"}} onClick={()=>onContactClick(c)}>
-              <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>· {c.company}</span></div>
+              <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{c.name} <span style={{color:"#5a5a7a",fontWeight:400}}>Â· {c.company}</span></div>
               <div style={{fontSize:11,color:c.urgency===3?"#f87171":c.urgency===2?"#fbbf24":"#6b7280",marginTop:1}}>{c.reason}</div>
             </div>
             <span style={{fontSize:11,color:STAGE_COLOR[c.stage],background:`${STAGE_COLOR[c.stage]}15`,padding:"2px 7px",borderRadius:20,flexShrink:0}}>{c.stage}</span>
             <div style={{display:"flex",gap:5,flexShrink:0}}>
-              <button onClick={()=>onDraftFollowUp(c,"email")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>✉ Email</button>
-              <button onClick={()=>onDraftFollowUp(c,"text")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>💬 Text</button>
+              <button onClick={()=>onDraftFollowUp(c,"email")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>â Email</button>
+              <button onClick={()=>onDraftFollowUp(c,"text")} className="hov-action" style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid #2a2a4a",background:"transparent",color:"#8a8aa8",cursor:"pointer"}}>ð¬ Text</button>
             </div>
           </div>
         ))}
@@ -754,7 +754,7 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
         </div>
         <div style={{background:"#0a0a14",border:"1px solid #14142a",borderRadius:12,padding:20}}>
           <div style={S.cardTitle}>Upcoming Tasks</div>
-          {upcoming.length===0&&<div style={{fontSize:13,color:"#3a3a5a",marginTop:8}}>No pending tasks 🎉</div>}
+          {upcoming.length===0&&<div style={{fontSize:13,color:"#3a3a5a",marginTop:8}}>No pending tasks ð</div>}
           {upcoming.map(t=>{
             const overdue=t.dueDate&&new Date(t.dueDate)<new Date();
             return(
@@ -762,7 +762,7 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
                 <button onClick={()=>onToggleTask(t.id)} style={{width:15,height:15,border:`1.5px solid ${overdue?"#f87171":"#2a2a4a"}`,borderRadius:3,background:"transparent",flexShrink:0,cursor:"pointer"}}/>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,color:"#d2d2ea"}}>{t.title}</div>
-                  <div style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" · Overdue":""}</div>
+                  <div style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" Â· Overdue":""}</div>
                 </div>
                 <span style={{fontSize:11,color:PRIORITY_COLOR[t.priority],background:"#0e0e1e",padding:"2px 7px",borderRadius:20}}>{t.priority}</span>
               </div>
@@ -781,7 +781,7 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
               <div>
                 <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
                 <div style={{fontSize:11,color:"#4a4a6a",marginTop:2}}>
-                  {c&&<span style={{color:"#7c6af7",cursor:"pointer"}} onClick={()=>onContactClick(c)}>{c.name} · {c.company} · </span>}
+                  {c&&<span style={{color:"#7c6af7",cursor:"pointer"}} onClick={()=>onContactClick(c)}>{c.name} Â· {c.company} Â· </span>}
                   {fmtDate(n.createdAt)}
                 </div>
               </div>
@@ -793,7 +793,7 @@ function Dashboard({contacts,tasks,notes,pipelineValue,wonValue,overdueTasks,onT
   );
 }
 
-// ─── PIPELINE ─────────────────────────────────────────────────────────────────
+// âââ PIPELINE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Pipeline({contacts,dragId,dragOver,setDragId,setDragOver,onDrop,onCardClick,onEdit}){
   return(
     <div style={{overflowX:"auto",animation:"fadeUp 0.3s ease"}}>
@@ -819,7 +819,7 @@ function Pipeline({contacts,dragId,dragOver,setDragId,setDragOver,onDrop,onCardC
                     className="hov-card" style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:8,padding:12,opacity:dragId===c.id?0.3:1,transition:"all 0.2s",cursor:"grab"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                       <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500,cursor:"pointer"}} onClick={()=>onCardClick(c)}>{c.name}</div>
-                      <button onClick={()=>onEdit(c)} className="hov-action" style={{fontSize:11,color:"#5a5a7a",padding:"2px 5px",borderRadius:4,background:"transparent",cursor:"pointer"}}>✎</button>
+                      <button onClick={()=>onEdit(c)} className="hov-action" style={{fontSize:11,color:"#5a5a7a",padding:"2px 5px",borderRadius:4,background:"transparent",cursor:"pointer"}}>â</button>
                     </div>
                     <div style={{fontSize:11,color:"#4a4a6a",marginTop:2}}>{c.company}</div>
                     <div style={{fontSize:12,color:STAGE_COLOR[stage],fontFamily:"'DM Mono',monospace",marginTop:6}}>{fmtMoney(c.value)}</div>
@@ -835,7 +835,7 @@ function Pipeline({contacts,dragId,dragOver,setDragId,setDragOver,onDrop,onCardC
   );
 }
 
-// ─── CONTACTS ─────────────────────────────────────────────────────────────────
+// âââ CONTACTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNote,onDeleteNote,onToggleTask,onAddTask,onDraftFollowUp,isMobile}){
   const [search,setSearch]=useState("");
   const [noteText,setNoteText]=useState("");
@@ -849,14 +849,14 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
   // Mobile: show only list OR only detail, not both
   if(isMobile&&detail) return(
     <div style={{animation:"fadeUp 0.2s ease",paddingBottom:20}}>
-      <button onClick={()=>setDetail(null)} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:"0 0 14px 0",display:"block"}}>← All Contacts</button>
+      <button onClick={()=>setDetail(null)} style={{color:"#7c6af7",background:"transparent",border:"none",fontSize:14,cursor:"pointer",padding:"0 0 14px 0",display:"block"}}>â All Contacts</button>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
         <div style={{display:"flex",gap:12,alignItems:"center"}}>
           <div style={{width:44,height:44,borderRadius:"50%",background:`${STAGE_COLOR[detail.stage]}18`,color:STAGE_COLOR[detail.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,flexShrink:0}}>{initials(detail.name)}</div>
           <div><div style={{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#e2e2f0"}}>{detail.name}</div><div style={{fontSize:12,color:"#6b6b8a"}}>{detail.company}</div></div>
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
-          <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>✉ Draft</button>
+          <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>â Draft</button>
           <button onClick={()=>onEdit(detail)} style={S.outlineBtn}>Edit</button>
           <button onClick={()=>onDelete(detail.id)} style={{...S.outlineBtn,color:"#f87171",borderColor:"#3a1a1a"}}>Delete</button>
         </div>
@@ -870,40 +870,40 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
         ))}
       </div>
       {detail.workAreas&&detail.workAreas.length>0&&<div style={{marginBottom:12,display:"flex",flexWrap:"wrap",gap:6}}>{detail.workAreas.map(a=><span key={a} style={{padding:"4px 10px",borderRadius:20,border:"1px solid #7c6af740",background:"#1e1e3a",color:"#a89af7",fontSize:12}}>{a}</span>)}</div>}
-      {(detail.barriers||[]).length>0&&<div style={{background:"#1a0e00",border:"1px solid #f9731640",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:10,alignItems:"flex-start"}}><span>⚠</span><div><div style={{fontSize:12,color:"#f97316",fontWeight:600}}>{(detail.barriers||[]).join(", ")}</div>{detail.barrierNote&&<div style={{fontSize:12,color:"#c2a080",marginTop:2}}>{detail.barrierNote}</div>}</div></div>}
-      {detail.objection&&detail.objection!=="No objection"&&<div style={{background:"#12102a",border:"1px solid #a78bfa40",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}><span>🧠</span><div><div style={{fontSize:11,color:"#a78bfa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.07em"}}>Objection</div><div style={{fontSize:13,color:"#c2b8f0"}}>{detail.objection}</div></div></div>}
+      {(detail.barriers||[]).length>0&&<div style={{background:"#1a0e00",border:"1px solid #f9731640",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:10,alignItems:"flex-start"}}><span>â </span><div><div style={{fontSize:12,color:"#f97316",fontWeight:600}}>{(detail.barriers||[]).join(", ")}</div>{detail.barrierNote&&<div style={{fontSize:12,color:"#c2a080",marginTop:2}}>{detail.barrierNote}</div>}</div></div>}
+      {detail.objection&&detail.objection!=="No objection"&&<div style={{background:"#12102a",border:"1px solid #a78bfa40",borderRadius:10,padding:"12px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}><span>ð§ </span><div><div style={{fontSize:11,color:"#a78bfa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.07em"}}>Objection</div><div style={{fontSize:13,color:"#c2b8f0"}}>{detail.objection}</div></div></div>}
       <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
-          <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)} style={{flex:1,padding:"9px 4px",borderRadius:8,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}} className="hov-action">{icon} {label}</button>
+        {[["ð","Called"],["ð¬","Texted"],["ðï¸","Left VM"]].map(([icon,label])=>(
+          <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} â ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)} style={{flex:1,padding:"9px 4px",borderRadius:8,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}} className="hov-action">{icon} {label}</button>
         ))}
       </div>
       <div style={{marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={S.cardTitle}>Tasks</div><button onClick={()=>onAddTask(detail.id)} style={{fontSize:11,color:"#7c6af7",background:"transparent",border:"none",cursor:"pointer"}}>+ Add</button></div>
         {cTasks.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No tasks yet.</div>}
-        {cTasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #0e0e1e"}}><button onClick={()=>onToggleTask(t.id)} style={{width:14,height:14,border:`1.5px solid ${t.done?"#7c6af7":"#2a2a4a"}`,borderRadius:3,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:"#fff",fontSize:9}}>✓</span>}</button><span style={{fontSize:12,color:t.done?"#4a4a6a":"#c2c2da",flex:1,textDecoration:t.done?"line-through":"none"}}>{t.title}</span><span style={{fontSize:11,color:"#4a4a6a"}}>{t.dueDate?fmtDate(t.dueDate):""}</span></div>))}
+        {cTasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #0e0e1e"}}><button onClick={()=>onToggleTask(t.id)} style={{width:14,height:14,border:`1.5px solid ${t.done?"#7c6af7":"#2a2a4a"}`,borderRadius:3,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:"#fff",fontSize:9}}>â</span>}</button><span style={{fontSize:12,color:t.done?"#4a4a6a":"#c2c2da",flex:1,textDecoration:t.done?"line-through":"none"}}>{t.title}</span><span style={{fontSize:11,color:"#4a4a6a"}}>{t.dueDate?fmtDate(t.dueDate):""}</span></div>))}
       </div>
       <div>
         <div style={{...S.cardTitle,marginBottom:10}}>Notes</div>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
-          <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note…" onKeyDown={e=>{if(e.key==="Enter"){onAddNote(detail.id,noteText);setNoteText("");}}} style={{...S.input,flex:1,fontSize:13}}/>
+          <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a noteâ¦" onKeyDown={e=>{if(e.key==="Enter"){onAddNote(detail.id,noteText);setNoteText("");}}} style={{...S.input,flex:1,fontSize:13}}/>
           <button onClick={()=>{onAddNote(detail.id,noteText);setNoteText("");}} style={S.primaryBtn}>Save</button>
         </div>
         {cNotes.length===0&&<div style={{fontSize:12,color:"#3a3a5a"}}>No notes yet.</div>}
-        {cNotes.map(n=>(<div key={n.id} style={{padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6,display:"flex",gap:10}}><div style={{flex:1}}><div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div><div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div></div><button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">✕</button></div>))}
+        {cNotes.map(n=>(<div key={n.id} style={{padding:"10px 12px",background:"#0e0e1e",borderRadius:8,marginBottom:6,display:"flex",gap:10}}><div style={{flex:1}}><div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div><div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div></div><button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">â</button></div>))}
       </div>
     </div>
   );
   return(
     <div style={{display:"flex",gap:16,animation:"fadeUp 0.3s ease",height:isMobile?undefined:"calc(100vh - 130px)"}}>
       <div style={{width:detail?340:undefined,flex:detail?undefined:1,display:"flex",flexDirection:"column",minWidth:0}}>
-        <input placeholder="Search by name, company, or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:10,fontSize:13}}/>
+        <input placeholder="Search by name, company, or emailâ¦" value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:10,fontSize:13}}/>
         <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:1}}>
           {filtered.map(c=>(
             <div key={c.id} className="hov-row" onClick={()=>setDetail(c)}
               style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:8,background:detail?.id===c.id?"#0e0e1e":"transparent",borderLeft:`3px solid ${detail?.id===c.id?STAGE_COLOR[c.stage]:"transparent"}`,transition:"all 0.15s"}}>
               <div style={{width:36,height:36,borderRadius:"50%",background:`${STAGE_COLOR[c.stage]}18`,color:STAGE_COLOR[c.stage],display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{initials(c.name)}</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.name}{(c.barriers||[]).length>0&&<span style={{color:"#f97316",marginLeft:6,fontSize:11}}>⚠</span>}</div>
+                <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.name}{(c.barriers||[]).length>0&&<span style={{color:"#f97316",marginLeft:6,fontSize:11}}>â </span>}</div>
                 <div style={{fontSize:11,color:"#5a5a7a",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.workAreas&&c.workAreas.length?c.workAreas.join(", "):c.company||""}</div>
               </div>
               <div style={{flexShrink:0,textAlign:"right"}}>
@@ -927,11 +927,11 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
               </div>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
-              <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>✉ Draft Email</button>
-              <button onClick={()=>onDraftFollowUp(detail,"text")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>💬 Draft Text</button>
+              <button onClick={()=>onDraftFollowUp(detail,"email")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>â Draft Email</button>
+              <button onClick={()=>onDraftFollowUp(detail,"text")} style={{...S.primaryBtn,background:"#1e1e3a",color:"#a89af7",fontSize:11}}>ð¬ Draft Text</button>
               <button onClick={()=>onEdit(detail)} style={S.outlineBtn}>Edit</button>
               <button onClick={()=>onDelete(detail.id)} style={{...S.outlineBtn,color:"#f87171",borderColor:"#3a1a1a"}}>Delete</button>
-              <button onClick={()=>setDetail(null)} style={S.outlineBtn}>✕</button>
+              <button onClick={()=>setDetail(null)} style={S.outlineBtn}>â</button>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20,padding:16,background:"#0e0e1e",borderRadius:10}}>
@@ -954,7 +954,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
           )}
           {(detail.barriers||[]).length>0&&(
             <div style={{background:"#1a0e00",border:"1px solid #f9731640",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:12,alignItems:"flex-start"}}>
-              <span style={{fontSize:18,flexShrink:0}}>⚠</span>
+              <span style={{fontSize:18,flexShrink:0}}>â </span>
               <div>
                 <div style={{fontSize:12,color:"#f97316",fontWeight:600,marginBottom:3}}>{(detail.barriers||[]).join(", ")}</div>
                 {detail.barrierNote&&<div style={{fontSize:13,color:"#c2a080"}}>{detail.barrierNote}</div>}
@@ -964,7 +964,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
           )}
           {detail.objection&&detail.objection!=="No objection"&&(
             <div style={{background:"#12102a",border:"1px solid #a78bfa40",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",gap:10,alignItems:"center"}}>
-              <span style={{fontSize:16,flexShrink:0}}>🧠</span>
+              <span style={{fontSize:16,flexShrink:0}}>ð§ </span>
               <div>
                 <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>Objection</div>
                 <div style={{fontSize:13,color:"#c2b8f0"}}>{detail.objection}</div>
@@ -974,8 +974,8 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
           )}
           {/* Quick-touch logging */}
           <div style={{display:"flex",gap:6,marginBottom:20}}>
-            {[["📞","Called"],["💬","Texted"],["🎙️","Left VM"]].map(([icon,label])=>(
-              <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} — ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)
+            {[["ð","Called"],["ð¬","Texted"],["ðï¸","Left VM"]].map(([icon,label])=>(
+              <button key={label} onClick={()=>onAddNote(detail.id,`${icon} ${label} â ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}`)
               } style={{flex:1,padding:"9px 6px",borderRadius:8,border:"1px solid #1e1e2e",background:"#0e0e1e",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"background 0.1s"}} className="hov-action">{icon} {label}</button>
             ))}
           </div>
@@ -988,7 +988,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
             {cTasks.map(t=>(
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #0e0e1e"}}>
                 <button onClick={()=>onToggleTask(t.id)} style={{width:14,height:14,border:`1.5px solid ${t.done?"#7c6af7":"#2a2a4a"}`,borderRadius:3,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {t.done&&<span style={{color:"#fff",fontSize:9,lineHeight:1}}>✓</span>}
+                  {t.done&&<span style={{color:"#fff",fontSize:9,lineHeight:1}}>â</span>}
                 </button>
                 <span style={{fontSize:12,color:t.done?"#4a4a6a":"#c2c2da",flex:1,textDecoration:t.done?"line-through":"none"}}>{t.title}</span>
                 <span style={{fontSize:11,color:"#4a4a6a"}}>{t.dueDate?fmtDate(t.dueDate):""}</span>
@@ -998,7 +998,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
           <div>
             <div style={S.cardTitle}>Notes</div>
             <div style={{display:"flex",gap:8,margin:"10px 0"}}>
-              <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note… (Enter to save)"
+              <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a noteâ¦ (Enter to save)"
                 onKeyDown={e=>{if(e.key==="Enter"){onAddNote(detail.id,noteText);setNoteText("");}}}
                 style={{...S.input,flex:1,fontSize:12}}/>
               <button onClick={()=>{onAddNote(detail.id,noteText);setNoteText("");}} style={S.primaryBtn}>Save</button>
@@ -1010,7 +1010,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
                   <div style={{fontSize:13,color:"#c2c2da"}}>{n.text}</div>
                   <div style={{fontSize:11,color:"#4a4a6a",marginTop:3}}>{fmtDate(n.createdAt)}</div>
                 </div>
-                <button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">✕</button>
+                <button onClick={()=>onDeleteNote(n.id)} style={{color:"#3a3a5a",background:"transparent",border:"none",cursor:"pointer",fontSize:13}} className="hov-btn">â</button>
               </div>
             ))}
           </div>
@@ -1020,7 +1020,7 @@ function Contacts({contacts,detail,setDetail,notes,tasks,onEdit,onDelete,onAddNo
   );
 }
 
-// ─── TASKS ────────────────────────────────────────────────────────────────────
+// âââ TASKS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Tasks({tasks,contacts,onToggle,onDelete,onEdit}){
   const [filter,setFilter]=useState("pending");
   const cMap=Object.fromEntries(contacts.map(c=>[c.id,c]));
@@ -1041,17 +1041,17 @@ function Tasks({tasks,contacts,onToggle,onDelete,onEdit}){
           return(
             <div key={t.id} className="hov-row" style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<filtered.length-1?"1px solid #0e0e1e":"none"}}>
               <button onClick={()=>onToggle(t.id)} style={{width:17,height:17,border:`2px solid ${t.done?"#7c6af7":overdue?"#f87171":"#2a2a4a"}`,borderRadius:4,background:t.done?"#7c6af7":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                {t.done&&<span style={{color:"#fff",fontSize:10}}>✓</span>}
+                {t.done&&<span style={{color:"#fff",fontSize:10}}>â</span>}
               </button>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,color:t.done?"#4a4a6a":"#d2d2ea",textDecoration:t.done?"line-through":"none"}}>{t.title}</div>
-                {c&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>{c.name} · {c.company}</div>}
+                {c&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>{c.name} Â· {c.company}</div>}
               </div>
-              <span style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" · Overdue":""}</span>
+              <span style={{fontSize:11,color:overdue?"#f87171":"#5a5a7a"}}>{t.dueDate?fmtDate(t.dueDate):"No date"}{overdue?" Â· Overdue":""}</span>
               <span style={{fontSize:11,color:PRIORITY_COLOR[t.priority],background:"#0e0e1e",padding:"2px 8px",borderRadius:20,minWidth:52,textAlign:"center"}}>{t.priority}</span>
               <div style={{display:"flex",gap:4}}>
-                <button onClick={()=>onEdit(t)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>✎</button>
-                <button onClick={()=>onDelete(t.id)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>✕</button>
+                <button onClick={()=>onEdit(t)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>â</button>
+                <button onClick={()=>onDelete(t.id)} className="hov-action" style={{color:"#5a5a7a",background:"transparent",border:"none",padding:"3px 6px",borderRadius:4,cursor:"pointer",fontSize:12}}>â</button>
               </div>
             </div>
           );
@@ -1061,20 +1061,20 @@ function Tasks({tasks,contacts,onToggle,onDelete,onEdit}){
   );
 }
 
-// ─── FOLLOW-UP MODAL ──────────────────────────────────────────────────────────
+// âââ FOLLOW-UP MODAL ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const MSG_TEMPLATES={
   text:[
     {id:"quote-fu", label:"Quote Follow-Up",
-     body:c=>`Hi ${c.name}, wanted to follow up on the quote we sent over. Any questions or ready to move forward? – Nathan, HomeWorks Energy`},
+     body:c=>`Hi ${c.name}, wanted to follow up on the quote we sent over. Any questions or ready to move forward? â Nathan, HomeWorks Energy`},
     {id:"referral", label:"Job Complete / Referral",
-     body:c=>`Hi ${c.name}, hope you're loving the results from your recent ${fmtAreas(c.workAreas)}! If you know anyone who could benefit from our services, we'd really appreciate the referral. – Nathan, HomeWorks Energy`},
+     body:c=>`Hi ${c.name}, hope you're loving the results from your recent ${fmtAreas(c.workAreas)}! If you know anyone who could benefit from our services, we'd really appreciate the referral. â Nathan, HomeWorks Energy`},
     {id:"voicemail", label:"Left Voicemail",
-     body:c=>`Hi ${c.name}, I just tried giving you a call and left a voicemail. Feel free to call back or reply here. – Nathan, HomeWorks Energy`},
+     body:c=>`Hi ${c.name}, I just tried giving you a call and left a voicemail. Feel free to call back or reply here. â Nathan, HomeWorks Energy`},
   ],
   email:[
     {id:"quote-fu", label:"Quote Follow-Up",
      subject:"Following up on your quote",
-     body:c=>`Hi ${c.name},\n\nI wanted to check in on the quote I sent for ${fmtAreas(c.workAreas)}. Happy to answer any questions or walk you through the details. Let me know what works best for you.\n\n– Nathan, HomeWorks Energy`},
+     body:c=>`Hi ${c.name},\n\nI wanted to check in on the quote I sent for ${fmtAreas(c.workAreas)}. Happy to answer any questions or walk you through the details. Let me know what works best for you.\n\nâ Nathan, HomeWorks Energy`},
   ],
 };
 
@@ -1100,7 +1100,7 @@ function FollowUpModal({contact,msgType,notes,onClose}){
       ?`Write a short warm professional follow-up email from Nathan at HomeWorks Energy to ${contact.name}. Deal stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Return JSON with "subject" and "body" only. No markdown, no explanation.`
       :`Write a short casual friendly follow-up text from Nathan at HomeWorks Energy to ${contact.name}. Stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Under 3 sentences, conversational not salesy. Return JSON with "body" only. No markdown.`;
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:prompt}]})});
+      const res=await fetch("/.netlify/functions/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:prompt}]})});
       const data=await res.json();
       const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
       const parsed=JSON.parse(raw);
@@ -1134,14 +1134,14 @@ function FollowUpModal({contact,msgType,notes,onClose}){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
             <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>Message {contact.name}</h2>
-            <p style={{fontSize:12,color:"#5a5a7a",marginTop:3}}>{contact.phone&&type==="text"?`📞 ${contact.phone}`:contact.email&&type==="email"?`✉ ${contact.email}`:contact.name}</p>
+            <p style={{fontSize:12,color:"#5a5a7a",marginTop:3}}>{contact.phone&&type==="text"?`ð ${contact.phone}`:contact.email&&type==="email"?`â ${contact.email}`:contact.name}</p>
           </div>
-          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>â</button>
         </div>
 
         {/* Email / Text toggle */}
         <div style={{display:"flex",gap:4,marginBottom:16,background:"#0e0e1e",borderRadius:8,padding:4}}>
-          {[["email","✉ Email"],["text","💬 Text"]].map(([m,label])=>(
+          {[["email","â Email"],["text","ð¬ Text"]].map(([m,label])=>(
             <button key={m} onClick={()=>{setType(m);setDraft("");setSubject("");setAiStatus("idle");}} style={{flex:1,padding:"7px 0",borderRadius:6,border:"none",background:type===m?"#1e1e36":"transparent",color:type===m?"#a89af7":"#5a5a7a",fontSize:12,fontWeight:type===m?500:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{label}</button>
           ))}
         </div>
@@ -1158,7 +1158,7 @@ function FollowUpModal({contact,msgType,notes,onClose}){
                 </button>
               ))}
               <button onClick={generate} style={{padding:"7px 12px",borderRadius:8,border:"1px solid #2a2a4a",background:"transparent",color:"#5a5a7a",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-                {aiStatus==="loading"?"…":"✦ AI Draft"}
+                {aiStatus==="loading"?"â¦":"â¦ AI Draft"}
               </button>
             </div>
           </div>
@@ -1168,7 +1168,7 @@ function FollowUpModal({contact,msgType,notes,onClose}){
         {aiStatus==="loading"&&(
           <div style={{textAlign:"center",padding:"30px 0"}}>
             <div style={{width:24,height:24,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 10px"}}/>
-            <div style={{fontSize:13,color:"#6b6b8a"}}>Drafting…</div>
+            <div style={{fontSize:13,color:"#6b6b8a"}}>Draftingâ¦</div>
           </div>
         )}
 
@@ -1180,10 +1180,10 @@ function FollowUpModal({contact,msgType,notes,onClose}){
               <textarea value={draft} onChange={e=>setDraft(e.target.value)} style={{...S.input,height:type==="email"?200:120,resize:"vertical",lineHeight:1.7,fontSize:13}}/>
             </div>
             <div style={{fontSize:11,color:"#4a4a6a",marginTop:8,marginBottom:16}}>
-              ✦ Edit freely before sending.
+              â¦ Edit freely before sending.
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <button onClick={copyToClipboard} style={S.outlineBtn}>{copied?"✓ Copied":"Copy"}</button>
+              <button onClick={copyToClipboard} style={S.outlineBtn}>{copied?"â Copied":"Copy"}</button>
               <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
               <button onClick={send} style={S.primaryBtn}>
                 {type==="text"&&contact.phone?"Open in Messages":type==="email"&&contact.email?"Open in Mail":"Copy to Clipboard"}
@@ -1194,14 +1194,14 @@ function FollowUpModal({contact,msgType,notes,onClose}){
 
         {/* Empty state */}
         {aiStatus==="idle"&&!draft&&(
-          <div style={{textAlign:"center",padding:"30px 0",color:"#3a3a5a",fontSize:13}}>Pick a template above or use ✦ AI Draft</div>
+          <div style={{textAlign:"center",padding:"30px 0",color:"#3a3a5a",fontSize:13}}>Pick a template above or use â¦ AI Draft</div>
         )}
       </div>
     </div>
   );
 }
 
-// ─── IMPORT MODAL ─────────────────────────────────────────────────────────────
+// âââ IMPORT MODAL âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function ImportModal({onImport,onClose}){
   const [mode,setMode]=useState("image");
   const [text,setText]=useState("");
@@ -1214,7 +1214,7 @@ function ImportModal({onImport,onClose}){
   function handleFile(file){
     if(!file) return;
     const isHeic=file.type==="image/heic"||file.type==="image/heif"||file.name?.toLowerCase().endsWith(".heic");
-    if(isHeic){setErrorMsg("iPhone HEIC format isn't supported.\n\nFix: iPhone Settings → Camera → Formats → Most Compatible\n\nThen screenshot again.");setStatus("error");return;}
+    if(isHeic){setErrorMsg("iPhone HEIC format isn't supported.\n\nFix: iPhone Settings â Camera â Formats â Most Compatible\n\nThen screenshot again.");setStatus("error");return;}
     if(!file.type.startsWith("image/")){setErrorMsg("Please upload an image file.");setStatus("error");return;}
     const reader=new FileReader();
     reader.onload=e=>{const d=e.target.result;setImgData({base64:d.split(",")[1],mediaType:file.type,preview:d});setStatus("idle");};
@@ -1230,7 +1230,7 @@ function ImportModal({onImport,onClose}){
       const content=mode==="image"
         ?[{type:"image",source:{type:"base64",media_type:imgData.mediaType,data:imgData.base64}},{type:"text",text:prompt}]
         :[{type:"text",text:prompt+"\n\nText:\n"+text}];
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content}]})});
+      const res=await fetch("/.netlify/functions/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content}]})});
       const data=await res.json();
       const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
       const contacts=JSON.parse(raw);
@@ -1247,14 +1247,14 @@ function ImportModal({onImport,onClose}){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
           <div>
             <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#e2e2f0",fontWeight:400}}>AI Contact Import</h2>
-            <p style={{fontSize:12,color:"#5a5a7a",marginTop:4}}>Screenshot or paste — Claude extracts everything automatically</p>
+            <p style={{fontSize:12,color:"#5a5a7a",marginTop:4}}>Screenshot or paste â Claude extracts everything automatically</p>
           </div>
-          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+          <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>â</button>
         </div>
         {status==="idle"&&(
           <>
             <div style={{display:"flex",gap:4,marginBottom:16,background:"#0e0e1e",borderRadius:8,padding:4}}>
-              {[["image","📷 Screenshot"],["text","📋 Paste Text"]].map(([m,label])=>(
+              {[["image","ð· Screenshot"],["text","ð Paste Text"]].map(([m,label])=>(
                 <button key={m} onClick={()=>{setMode(m);setImgData(null);setText("");}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:mode===m?"#1e1e36":"transparent",color:mode===m?"#a89af7":"#5a5a7a",fontSize:12,fontWeight:mode===m?500:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{label}</button>
               ))}
             </div>
@@ -1262,40 +1262,40 @@ function ImportModal({onImport,onClose}){
               <>
                 <div onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}} onClick={()=>fileRef.current.click()}
                   style={{border:`2px dashed ${imgData?"#7c6af7":"#1e1e2e"}`,borderRadius:10,padding:"28px 20px",textAlign:"center",cursor:"pointer",marginBottom:14,background:imgData?"#0e0e1e":"transparent"}}>
-                  {imgData?(<div><img src={imgData.preview} style={{maxWidth:"100%",maxHeight:180,borderRadius:6,marginBottom:10}}/><div style={{fontSize:12,color:"#7c6af7"}}>✓ Loaded — click to change</div></div>)
-                  :(<div><div style={{fontSize:28,marginBottom:8}}>🖼</div><div style={{fontSize:13,color:"#8a8aa8",marginBottom:4}}>Drop screenshot or click to browse</div><div style={{fontSize:11,color:"#4a4a6a"}}>Screenshot your client screen and upload it here</div></div>)}
+                  {imgData?(<div><img src={imgData.preview} style={{maxWidth:"100%",maxHeight:180,borderRadius:6,marginBottom:10}}/><div style={{fontSize:12,color:"#7c6af7"}}>â Loaded â click to change</div></div>)
+                  :(<div><div style={{fontSize:28,marginBottom:8}}>ð¼</div><div style={{fontSize:13,color:"#8a8aa8",marginBottom:4}}>Drop screenshot or click to browse</div><div style={{fontSize:11,color:"#4a4a6a"}}>Screenshot your client screen and upload it here</div></div>)}
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
               </>
             )}
-            {mode==="text"&&<textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Paste client data here — any format works…" style={{...S.input,width:"100%",height:160,resize:"vertical",fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.7,marginBottom:14}}/>}
+            {mode==="text"&&<textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Paste client data here â any format worksâ¦" style={{...S.input,width:"100%",height:160,resize:"vertical",fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.7,marginBottom:14}}/>}
             <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
               <button onClick={onClose} style={S.outlineBtn}>Cancel</button>
-              <button onClick={runImport} disabled={!(mode==="image"?imgData:text.trim())} style={{...S.primaryBtn,opacity:(mode==="image"?imgData:text.trim())?1:0.4}}>✦ Extract Contacts</button>
+              <button onClick={runImport} disabled={!(mode==="image"?imgData:text.trim())} style={{...S.primaryBtn,opacity:(mode==="image"?imgData:text.trim())?1:0.4}}>â¦ Extract Contacts</button>
             </div>
           </>
         )}
-        {status==="loading"&&<div style={{textAlign:"center",padding:"48px 0"}}><div style={{width:32,height:32,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 14px"}}/><div style={{fontSize:14,color:"#6b6b8a"}}>Extracting contacts…</div></div>}
-        {status==="error"&&<div style={{textAlign:"center",padding:"36px 0"}}><div style={{fontSize:32,marginBottom:10}}>⚠</div><div style={{fontSize:13,color:"#f87171",marginBottom:16,lineHeight:1.8,whiteSpace:"pre-line"}}>{errorMsg}</div><button onClick={()=>setStatus("idle")} style={S.primaryBtn}>Try Again</button></div>}
+        {status==="loading"&&<div style={{textAlign:"center",padding:"48px 0"}}><div style={{width:32,height:32,border:"3px solid #1e1e3a",borderTopColor:"#7c6af7",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 14px"}}/><div style={{fontSize:14,color:"#6b6b8a"}}>Extracting contactsâ¦</div></div>}
+        {status==="error"&&<div style={{textAlign:"center",padding:"36px 0"}}><div style={{fontSize:32,marginBottom:10}}>â </div><div style={{fontSize:13,color:"#f87171",marginBottom:16,lineHeight:1.8,whiteSpace:"pre-line"}}>{errorMsg}</div><button onClick={()=>setStatus("idle")} style={S.primaryBtn}>Try Again</button></div>}
         {status==="preview"&&(
           <>
-            <div style={{fontSize:13,color:"#34d399",marginBottom:12,fontWeight:500}}>✓ Found {parsed.length} contact{parsed.length!==1?"s":""}</div>
+            <div style={{fontSize:13,color:"#34d399",marginBottom:12,fontWeight:500}}>â Found {parsed.length} contact{parsed.length!==1?"s":""}</div>
             <div style={{maxHeight:300,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
               {parsed.map((c,i)=>(
                 <div key={i} style={{background:"#0e0e1e",border:"1px solid #1e1e2e",borderRadius:8,padding:"12px 14px"}}>
                   <div style={{fontSize:14,color:"#d2d2ea",fontWeight:500}}>{c.name}</div>
                   {c.company&&<div style={{fontSize:12,color:"#6b6b8a"}}>{c.company}</div>}
                   <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",marginTop:7}}>
-                    {c.email&&<span style={{fontSize:11,color:"#7c6af7"}}>✉ {c.email}</span>}
-                    {c.phone&&<span style={{fontSize:11,color:"#60a5fa"}}>☎ {c.phone}</span>}
-                    {c.address&&<span style={{fontSize:11,color:"#8a8aa8"}}>⌂ {c.address}</span>}
+                    {c.email&&<span style={{fontSize:11,color:"#7c6af7"}}>â {c.email}</span>}
+                    {c.phone&&<span style={{fontSize:11,color:"#60a5fa"}}>â {c.phone}</span>}
+                    {c.address&&<span style={{fontSize:11,color:"#8a8aa8"}}>â {c.address}</span>}
                   </div>
                 </div>
               ))}
             </div>
             <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
-              <button onClick={()=>{setStatus("idle");setParsed([]);}} style={S.outlineBtn}>← Back</button>
-              <button onClick={()=>onImport(parsed)} style={S.primaryBtn}>Import {parsed.length} Contact{parsed.length!==1?"s":""} →</button>
+              <button onClick={()=>{setStatus("idle");setParsed([]);}} style={S.outlineBtn}>â Back</button>
+              <button onClick={()=>onImport(parsed)} style={S.primaryBtn}>Import {parsed.length} Contact{parsed.length!==1?"s":""} â</button>
             </div>
           </>
         )}
@@ -1304,7 +1304,7 @@ function ImportModal({onImport,onClose}){
   );
 }
 
-// ─── CONTACT MODAL ────────────────────────────────────────────────────────────
+// âââ CONTACT MODAL ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function ContactModal({data,onSave,onClose}){
   const [f,setF]=useState({name:"",company:"",email:"",phone:"",address:"",stage:"Negotiation",value:"",barriers:[],barrierNote:"",objection:"",workAreas:[],...data});
   const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
@@ -1313,7 +1313,7 @@ function ContactModal({data,onSave,onClose}){
     <div style={S.overlay}><div style={{...S.modal,maxHeight:"90vh",overflowY:"auto"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Contact</h2>
-        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>â</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         {[["name","Name *"],["company","Company"],["email","Email"],["phone","Phone"]].map(([k,l])=>(
@@ -1336,7 +1336,7 @@ function ContactModal({data,onSave,onClose}){
         </div>
         {/* Barrier section */}
         <div style={{gridColumn:"1/-1",borderTop:"1px solid #1e1e2e",paddingTop:12,marginTop:4}}>
-          <label style={{...S.label,color:"#f97316"}}>⚠ Project Barriers</label>
+          <label style={{...S.label,color:"#f97316"}}>â  Project Barriers</label>
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
             {BARRIERS.map(b=>{const on=(f.barriers||[]).includes(b);return(
               <button key={b} type="button" onClick={()=>setF(p=>({...p,barriers:on?p.barriers.filter(x=>x!==b):[...p.barriers,b]}))}
@@ -1349,14 +1349,14 @@ function ContactModal({data,onSave,onClose}){
         {(f.barriers||[]).length>0&&(
           <div style={{gridColumn:"1/-1"}}>
             <label style={S.label}>Barrier Notes</label>
-            <input value={f.barrierNote||""} onChange={set("barrierNote")} placeholder="Describe the barriers or next steps…" style={{...S.input,borderColor:"#f97316"}}/>
+            <input value={f.barrierNote||""} onChange={set("barrierNote")} placeholder="Describe the barriers or next stepsâ¦" style={{...S.input,borderColor:"#f97316"}}/>
           </div>
         )}
         {/* Objection */}
         <div style={{gridColumn:"1/-1",borderTop:"1px solid #1e1e2e",paddingTop:12,marginTop:4}}>
-          <label style={{...S.label,color:"#a78bfa"}}>🧠 Primary Objection</label>
+          <label style={{...S.label,color:"#a78bfa"}}>ð§  Primary Objection</label>
           <select value={f.objection||""} onChange={set("objection")} style={{...S.input,cursor:"pointer",borderColor:f.objection&&f.objection!=="No objection"?"#a78bfa":"#1e1e2e"}}>
-            <option value="">— None recorded —</option>
+            <option value="">â None recorded â</option>
             {OBJECTIONS.map(o=><option key={o} value={o}>{o}</option>)}
           </select>
         </div>
@@ -1369,15 +1369,15 @@ function ContactModal({data,onSave,onClose}){
   );
 }
 
-// ─── TASK MODAL ───────────────────────────────────────────────────────────────
+// âââ TASK MODAL âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function TaskModal({data,contacts,onSave,onClose}){
   const [f,setF]=useState({title:"",dueDate:"",priority:"Medium",done:false,contactId:"",...data});
   const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
 
   function openCalendar(){
     const contact=contacts.find(c=>c.id===f.contactId);
-    const title=encodeURIComponent(f.title+(contact?` — ${contact.name}`:""));
-    const details=encodeURIComponent(contact?`Client: ${contact.name}\nPhone: ${contact.phone||"—"}\nCRM Follow-Up`:"CRM Follow-Up");
+    const title=encodeURIComponent(f.title+(contact?` â ${contact.name}`:""));
+    const details=encodeURIComponent(contact?`Client: ${contact.name}\nPhone: ${contact.phone||"â"}\nCRM Follow-Up`:"CRM Follow-Up");
     let dates="";
     if(f.dueDate){
       const d=f.dueDate.replace(/-/g,"");
@@ -1391,13 +1391,13 @@ function TaskModal({data,contacts,onSave,onClose}){
     <div style={S.overlay}><div style={S.modal}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Task</h2>
-        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>â</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div>
           <label style={S.label}>Task Type *</label>
           <select value={f.title} onChange={set("title")} style={{...S.input,cursor:"pointer"}}>
-            <option value="">— Select a task —</option>
+            <option value="">â Select a task â</option>
             <optgroup label="Follow Ups">
               <option value="Follow up on project">Follow up on project</option>
               <option value="Follow up on proposal">Follow up on proposal</option>
@@ -1415,12 +1415,12 @@ function TaskModal({data,contacts,onSave,onClose}){
               <option value="Schedule site visit">Schedule site visit</option>
               <option value="Send documents">Send documents</option>
               <option value="Call client">Call client</option>
-              <option value="Custom">Custom…</option>
+              <option value="Custom">Customâ¦</option>
             </optgroup>
           </select>
           {f.title==="Custom"&&(
             <input
-              placeholder="Type custom task…"
+              placeholder="Type custom taskâ¦"
               onChange={e=>setF(p=>({...p,title:e.target.value}))}
               style={{...S.input,marginTop:8}}
               autoFocus
@@ -1433,14 +1433,14 @@ function TaskModal({data,contacts,onSave,onClose}){
         </div>
         <div><label style={S.label}>Link to Contact</label>
           <select value={f.contactId||""} onChange={set("contactId")} style={{...S.input,cursor:"pointer"}}>
-            <option value="">— none —</option>
-            {contacts.map(c=><option key={c.id} value={c.id}>{c.name} · {c.company}</option>)}
+            <option value="">â none â</option>
+            {contacts.map(c=><option key={c.id} value={c.id}>{c.name} Â· {c.company}</option>)}
           </select>
         </div>
-        {/* Calendar button — shows once there's a title */}
+        {/* Calendar button â shows once there's a title */}
         {f.title.trim()&&f.dueDate&&(
           <button onClick={openCalendar} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",borderRadius:8,border:"1px solid #2a2a4a",background:"transparent",color:"#a89af7",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"background 0.15s"}} className="hov-action">
-            📅 Add to Google Calendar
+            ð Add to Google Calendar
           </button>
         )}
       </div>
@@ -1452,7 +1452,7 @@ function TaskModal({data,contacts,onSave,onClose}){
   );
 }
 
-// ─── CALENDAR ─────────────────────────────────────────────────────────────────
+// âââ CALENDAR âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
   const [currentDate,setCurrentDate]=useState(new Date());
   const [selectedDay,setSelectedDay]=useState(null);
@@ -1488,8 +1488,8 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
       <div style={{flex:1}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div style={{display:"flex",gap:6}}>
-            <button onClick={prevMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>←</button>
-            <button onClick={nextMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>→</button>
+            <button onClick={prevMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>â</button>
+            <button onClick={nextMonth} style={{...S.outlineBtn,padding:"6px 12px"}}>â</button>
             <button onClick={goToday} style={{...S.outlineBtn,padding:"6px 12px",fontSize:11}}>Today</button>
           </div>
           <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#e2e2f0",fontWeight:400}}>{MONTHS[month]} {year}</div>
@@ -1519,7 +1519,7 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
                 ))}
                 {tasksDue.slice(0,2).map(t=>(
                   <div key={t.id} style={{fontSize:10,color:"#fbbf24",background:"#2a1e00",borderRadius:3,padding:"2px 5px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    ✓ {t.title}
+                    â {t.title}
                   </div>
                 ))}
                 {total>2&&<div style={{fontSize:10,color:"#5a5a7a"}}>+{total-2} more</div>}
@@ -1547,7 +1547,7 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
             <div style={{fontFamily:"'Instrument Serif',serif",fontSize:16,color:"#e2e2f0"}}>{MONTHS[month]} {selectedDay}</div>
             <div style={{display:"flex",gap:6}}>
               <button onClick={()=>onAddEvent(ds(selectedDay))} style={{...S.primaryBtn,fontSize:11,padding:"5px 10px"}}>+ Add</button>
-              <button onClick={()=>setSelectedDay(null)} style={{...S.outlineBtn,padding:"5px 8px",fontSize:12}}>✕</button>
+              <button onClick={()=>setSelectedDay(null)} style={{...S.outlineBtn,padding:"5px 8px",fontSize:12}}>â</button>
             </div>
           </div>
           {selItems.calEvents.length===0&&selItems.tasksDue.length===0&&(
@@ -1560,12 +1560,12 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                   <div style={{fontSize:13,color:"#d2d2ea",fontWeight:500}}>{e.title}</div>
                   <div style={{display:"flex",gap:4,flexShrink:0}}>
-                    <button onClick={()=>onEditEvent(e)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">✎</button>
-                    <button onClick={()=>onDeleteEvent(e.id)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">✕</button>
+                    <button onClick={()=>onEditEvent(e)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">â</button>
+                    <button onClick={()=>onDeleteEvent(e.id)} style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:12}} className="hov-btn">â</button>
                   </div>
                 </div>
-                {e.time&&<div style={{fontSize:11,color:"#7c6af7",marginTop:2}}>🕐 {e.time}{e.duration?` · ${e.duration} min`:""}</div>}
-                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>👤 {contact.name}{contact.company?` · ${contact.company}`:""}</div>}
+                {e.time&&<div style={{fontSize:11,color:"#7c6af7",marginTop:2}}>ð {e.time}{e.duration?` Â· ${e.duration} min`:""}</div>}
+                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>ð¤ {contact.name}{contact.company?` Â· ${contact.company}`:""}</div>}
                 {e.notes&&<div style={{fontSize:11,color:"#6b6b8a",marginTop:4,lineHeight:1.5}}>{e.notes}</div>}
               </div>
             );
@@ -1574,8 +1574,8 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
             const contact=cMap[t.contactId];
             return(
               <div key={t.id} style={{background:"#1a1400",border:"1px solid #fbbf2430",borderRadius:8,padding:"12px 14px",marginBottom:8}}>
-                <div style={{fontSize:13,color:"#fbbf24",fontWeight:500}}>✓ {t.title}</div>
-                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>👤 {contact.name}{contact.company?` · ${contact.company}`:""}</div>}
+                <div style={{fontSize:13,color:"#fbbf24",fontWeight:500}}>â {t.title}</div>
+                {contact&&<div style={{fontSize:11,color:"#5a5a7a",marginTop:2}}>ð¤ {contact.name}{contact.company?` Â· ${contact.company}`:""}</div>}
                 <div style={{fontSize:10,color:"#4a4a6a",marginTop:3}}>Task due</div>
               </div>
             );
@@ -1586,7 +1586,7 @@ function Calendar({events,tasks,contacts,onAddEvent,onEditEvent,onDeleteEvent}){
   );
 }
 
-// ─── EVENT MODAL ───────────────────────────────────────────────────────────────
+// âââ EVENT MODAL âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function EventModal({data,contacts,onSave,onClose}){
   const [f,setF]=useState({title:"",date:"",time:"",duration:"60",contactId:"",notes:"",...data});
   const set=k=>e=>setF(p=>({...p,[k]:e.target.value}));
@@ -1595,12 +1595,12 @@ function EventModal({data,contacts,onSave,onClose}){
     <div style={S.overlay}><div style={{...S.modal,maxHeight:"90vh",overflowY:"auto"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <h2 style={{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#e2e2f0",fontWeight:400}}>{data.id?"Edit":"New"} Appointment</h2>
-        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>✕</button>
+        <button onClick={onClose} className="hov-btn" style={{color:"#5a5a7a",background:"transparent",border:"none",cursor:"pointer",fontSize:18}}>â</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div>
           <label style={S.label}>Title *</label>
-          <input value={f.title} onChange={set("title")} placeholder="e.g. Site visit, Proposal review…" style={S.input} autoFocus/>
+          <input value={f.title} onChange={set("title")} placeholder="e.g. Site visit, Proposal reviewâ¦" style={S.input} autoFocus/>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <div>
@@ -1621,13 +1621,13 @@ function EventModal({data,contacts,onSave,onClose}){
         <div>
           <label style={S.label}>Link to Contact</label>
           <select value={f.contactId||""} onChange={set("contactId")} style={{...S.input,cursor:"pointer"}}>
-            <option value="">— none —</option>
-            {contacts.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` · ${c.company}`:""}</option>)}
+            <option value="">â none â</option>
+            {contacts.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` Â· ${c.company}`:""}</option>)}
           </select>
         </div>
         <div>
           <label style={S.label}>Notes</label>
-          <textarea value={f.notes||""} onChange={set("notes")} placeholder="Any details…" style={{...S.input,height:80,resize:"vertical",lineHeight:1.6}}/>
+          <textarea value={f.notes||""} onChange={set("notes")} placeholder="Any detailsâ¦" style={{...S.input,height:80,resize:"vertical",lineHeight:1.6}}/>
         </div>
       </div>
       <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20}}>
@@ -1638,7 +1638,7 @@ function EventModal({data,contacts,onSave,onClose}){
   );
 }
 
-// ─── SHARED STYLES ────────────────────────────────────────────────────────────
+// âââ SHARED STYLES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const S={
   primaryBtn:{padding:"8px 16px",borderRadius:8,border:"none",background:"#7c6af7",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"opacity 0.15s"},
   outlineBtn:{padding:"8px 16px",borderRadius:8,border:"1px solid #1e1e2e",background:"transparent",color:"#8a8aa8",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"},
