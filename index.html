@@ -7,7 +7,6 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -43,16 +42,9 @@
 <body>
 <div id="root"></div>
 
-<script>
-// ─── CONFIG — Fill these in after setting up Supabase ───────────────────────
-const SUPABASE_URL = "https://wyeifrvhubffdljkqcad.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZWlmcnZodWJmZmRsamtxY2FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Njk0ODMsImV4cCI6MjA4NzQ0NTQ4M30.APTz3xwVsW1WhIUQq-EY-EbaLDmYsSU8DZ2-lm1Oovo";
-// ─────────────────────────────────────────────────────────────────────────────
-</script>
 
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const STAGES = ["Negotiation","Closed Won","Closed Lost"];
 const STAGE_COLOR = {
@@ -60,22 +52,24 @@ const STAGE_COLOR = {
   Negotiation:"#f97316","Closed Won":"#34d399","Closed Lost":"#6b7280"
 };
 const PRIORITY_COLOR = {Low:"#6b7280",Medium:"#fbbf24",High:"#f87171"};
-function uid(){return Math.random().toString(36).slice(2,10);}
+function uid(){return crypto.randomUUID();}
 function fmtDate(d){return d?new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"—";}
 function fmtMoney(v){return "$"+Number(v||0).toLocaleString();}
 function initials(name=""){return name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();}
 
 // ─── DATA LAYER ──────────────────────────────────────────────────────────────
+const EMPTY_STATE={contacts:[],notes:[],tasks:[],events:[]};
 async function loadData(){
   try{
-    const {data,error}=await supabase.from("crm_data").select("data").eq("user_key","nathan_vega").single();
-    if(error||!data) return {contacts:[],notes:[],tasks:[],events:[]};
-    return data.data||{contacts:[],notes:[],tasks:[],events:[]};
-  }catch{return {contacts:[],notes:[],tasks:[],events:[]};}
+    const res=await fetch("/.netlify/functions/db",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load"})});
+    if(!res.ok) return EMPTY_STATE;
+    const data=await res.json();
+    return data||EMPTY_STATE;
+  }catch{return EMPTY_STATE;}
 }
 async function saveData(state){
   try{
-    await supabase.from("crm_data").upsert({user_key:"nathan_vega",data:state,updated_at:new Date().toISOString()});
+    await fetch("/.netlify/functions/db",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",data:state})});
   }catch(e){console.warn("Save failed",e);}
 }
 
@@ -1093,19 +1087,24 @@ function FollowUpModal({contact,msgType,notes,onClose}){
 
   async function generate(){
     setAiStatus("loading");
-    const notesText=notes.length>0?notes.map(n=>n.text).join("; "):"No notes yet.";
-    const objectionText=contact.objection&&contact.objection!=="No objection"?`Their main objection is: ${contact.objection}.`:"";
+    function sanitize(s){return String(s||"").replace(/[\x00-\x1f<>]/g,"").slice(0,500);}
+    const notesText=notes.length>0?notes.map(n=>sanitize(n.text)).join("; "):"No notes yet.";
+    const objectionText=contact.objection&&contact.objection!=="No objection"?`Their main objection is: ${sanitize(contact.objection)}.`:"";
     const isEmail=type==="email";
-    const prompt=isEmail
-      ?`Write a short warm professional follow-up email from Nathan at HomeWorks Energy to ${contact.name}. Deal stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Return JSON with "subject" and "body" only. No markdown, no explanation.`
-      :`Write a short casual friendly follow-up text from Nathan at HomeWorks Energy to ${contact.name}. Stage: ${contact.stage}. ${objectionText} Context: ${notesText}. Address their objection naturally if present. Under 3 sentences, conversational not salesy. Return JSON with "body" only. No markdown.`;
+    const systemPrompt=isEmail
+      ?"You write short warm professional follow-up emails for Nathan at HomeWorks Energy. Return ONLY valid JSON with keys 'subject' and 'body'. No markdown, no explanation."
+      :"You write short casual friendly follow-up texts for Nathan at HomeWorks Energy. Return ONLY valid JSON with key 'body'. Under 3 sentences, conversational not salesy. No markdown.";
+    const userPrompt=`Contact name: ${sanitize(contact.name)}\nDeal stage: ${sanitize(contact.stage)}\n${objectionText}\nContext: ${notesText}`;
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens;600,messages:[{role:"user",content:prompt}]})});
+      const res=await fetch("/.netlify/functions/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,system:systemPrompt,messages:[{role:"user",content:userPrompt}]})});
+      if(!res.ok) throw new Error("API error");
       const data=await res.json();
       const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
-      const parsed=JSON.parse(raw);
-      setDraft(parsed.body||"");
-      if(isEmail) setSubject(parsed.subject||"");
+      let parsed;
+      try{parsed=JSON.parse(raw);}catch{throw new Error("Invalid AI response");}
+      if(typeof parsed!=="object"||parsed===null||Array.isArray(parsed)) throw new Error("Unexpected shape");
+      setDraft(String(parsed.body||""));
+      if(isEmail) setSubject(String(parsed.subject||""));
       setAiStatus("done");
     }catch{setDraft("Couldn't generate. Try again.");setAiStatus("done");}
   }
@@ -1216,6 +1215,7 @@ function ImportModal({onImport,onClose}){
     const isHeic=file.type==="image/heic"||file.type==="image/heif"||file.name?.toLowerCase().endsWith(".heic");
     if(isHeic){setErrorMsg("iPhone HEIC format isn't supported.\n\nFix: iPhone Settings → Camera → Formats → Most Compatible\n\nThen screenshot again.");setStatus("error");return;}
     if(!file.type.startsWith("image/")){setErrorMsg("Please upload an image file.");setStatus("error");return;}
+    if(file.size>10*1024*1024){setErrorMsg("File too large. Max size is 10MB.");setStatus("error");return;}
     const reader=new FileReader();
     reader.onload=e=>{const d=e.target.result;setImgData({base64:d.split(",")[1],mediaType:file.type,preview:d});setStatus("idle");};
     reader.readAsDataURL(file);
@@ -1233,8 +1233,9 @@ function ImportModal({onImport,onClose}){
       const res=await fetch("/.netlify/functions/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,messages:[{role:"user",content}]})});
       const data=await res.json();
       const raw=(data.content||[]).map(b=>b.text||"").join("").trim().replace(/```json|```/g,"").trim();
-      const contacts=JSON.parse(raw);
-      if(!Array.isArray(contacts)) throw new Error();
+      let contacts;
+      try{contacts=JSON.parse(raw);}catch{throw new Error("Invalid JSON from AI");}
+      if(!Array.isArray(contacts)) throw new Error("Expected array");
       const valid=contacts.filter(c=>c.name&&c.name.trim()&&!c.name.toLowerCase().includes("nathan vega"));
       if(valid.length===0){setErrorMsg("No contacts found. Try a clearer screenshot.");setStatus("error");return;}
       setParsed(valid);setStatus("preview");
